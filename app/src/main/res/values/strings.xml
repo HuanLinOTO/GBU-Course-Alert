@@ -92,7 +92,12 @@
     <string name="settings_save">保存</string>
     <string name="settings_term_hint">「第 X 周」依据学期第一周周一计算。通常已在同步时从教务系统自动校准，如与实际不符可手动修改。</string>
     <string name="settings_section_about">关于</string>
-    <string name="settings_about">GBU 课表 · 数据仅存本机（凭据经 Keystore 加密），不同步任何服务器。\n半角数字之学号 + 明文密码经 HTTPS 直连学校 iAAA 认证。</string>
+    <string name="settings_about_version">GBU课表 v%1$s</string>
+    <string name="settings_about_school" translatable="false">大湾区大学 · Great Bay University</string>
+    <string name="settings_about_repo">开源仓库：HuanLinOTO/GBU-Course-Alert</string>
+    <string name="settings_about_repo_url" translatable="false">https://github.com/HuanLinOTO/GBU-Course-Alert</string>
+    <string name="settings_about_copyright" translatable="false">© 2026 多玩幻灵qwq (HuanLinOTO)</string>
+    <string name="settings_about">数据仅存本机（凭据经 Keystore 加密），不同步任何服务器。\n半角数字之学号 + 明文密码经 HTTPS 直连学校 iAAA 认证。</string>
     <string name="settings_last_sync">上次同步：%1$s</string>
 
     <!-- 同步 / 错误消息（ViewModel） -->

@@ -6,6 +6,7 @@ import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -41,10 +42,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import me.huanlin.gbuca.BuildConfig
 import me.huanlin.gbuca.GbuCaApp
 import me.huanlin.gbuca.R
 import me.huanlin.gbuca.reminder.LiveUpdateNotifier
@@ -229,6 +232,28 @@ fun SettingsScreen(
 
         // ---- 关于 ----
         SectionTitle(stringResource(R.string.settings_section_about))
+        Text(
+            stringResource(R.string.settings_about_version, BuildConfig.VERSION_NAME),
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        val uriHandler = LocalUriHandler.current
+        val repoUrl = stringResource(R.string.settings_about_repo_url)
+        Text(
+            stringResource(R.string.settings_about_school),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            stringResource(R.string.settings_about_repo),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.clickable { uriHandler.openUri(repoUrl) },
+        )
+        Text(
+            stringResource(R.string.settings_about_copyright),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
         Text(
             stringResource(R.string.settings_about),
             style = MaterialTheme.typography.bodySmall,

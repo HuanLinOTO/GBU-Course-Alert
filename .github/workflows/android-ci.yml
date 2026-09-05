@@ -3,6 +3,7 @@ name: Android CI
 on:
   push:
     branches: [main, master]
+    tags: ['v*']
   pull_request:
   workflow_dispatch:
 
@@ -15,6 +16,8 @@ jobs:
     name: Build · Test · Lint
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -40,16 +43,46 @@ jobs:
       - name: Build, test and lint
         run: ./gradlew assembleDebug assembleRelease testDebugUnitTest lintDebug --stacktrace --console=plain
 
+      # 以 versionName 规范命名 APK：GBU-Course-Alert-vX.Y.Z-{debug,release}.apk
+      - name: Collect APKs
+        if: success()
+        run: |
+          version=$(grep -oP 'versionName\s*=\s*"\K[^"]+' app/build.gradle.kts | head -n1)
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+          mkdir -p apk-out
+          cp app/build/outputs/apk/debug/*.apk "apk-out/GBU-Course-Alert-v${version}-debug.apk"
+          cp app/build/outputs/apk/release/*.apk "apk-out/GBU-Course-Alert-v${version}-release.apk"
+
       - name: Upload APKs
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: apks-${{ github.sha }}
-          path: |
-            app/build/outputs/apk/debug/*.apk
-            app/build/outputs/apk/release/*.apk
+          name: GBU-Course-Alert-v${{ env.VERSION }}
+          path: apk-out/*.apk
           if-no-files-found: error
           retention-days: 14
+
+      # 打 v* tag 推送时自动创建 GitHub Release 并附上 APK
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cat > release-notes.md <<'EOF'
+          ## GBU课表首个公开版本
+
+          - iAAA 统一认证登录（纯 API，验证码时 WebView 兜底）
+          - 已选课程同步、Room 离线缓存、自动重登重试
+          - 今日页：上课中/课间倒计时 + 今日课次列表
+          - 周课表：大节网格、实验课区分色、今日高亮
+          - 上课提醒（精确闹钟，提前分钟数可调）与 Live Update 常驻通知
+          - 桌面小组件（今日课程 + 下节课高亮）
+
+          > CI 构建的 APK 使用独立的调试签名，覆盖安装本地构建版本时请先卸载。
+          EOF
+          gh release create "$GITHUB_REF_NAME" apk-out/*.apk \
+            --title "GBU课表 $GITHUB_REF_NAME" \
+            --notes-file release-notes.md
 
       - name: Upload lint report
         if: failure()
