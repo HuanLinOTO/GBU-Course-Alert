@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import androidx.room.withTransaction
 import me.huanlin.gbuca.data.GbuException
 import me.huanlin.gbuca.data.local.CredentialStore
 import me.huanlin.gbuca.data.local.SettingsStore
@@ -128,10 +129,13 @@ class CourseRepository(
             meetingEntities += parsed.meetings.map { it.toEntity(xnxq) }
         }
 
-        db.courseDao().deleteByXnxq(xnxq)
-        db.meetingDao().deleteByXnxq(xnxq)
-        db.courseDao().insertAll(courseEntities)
-        db.meetingDao().insertAll(meetingEntities)
+        // 事务写入，避免中断时出现课程/课次不一致
+        db.withTransaction {
+            db.courseDao().deleteByXnxq(xnxq)
+            db.meetingDao().deleteByXnxq(xnxq)
+            db.courseDao().insertAll(courseEntities)
+            db.meetingDao().insertAll(meetingEntities)
+        }
 
         settings.lastSyncAt = now
         return SyncResult(all.size, meetingEntities.size, unparsedAll)

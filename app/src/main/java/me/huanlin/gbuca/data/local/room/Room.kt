@@ -88,7 +88,7 @@ interface MeetingDao {
     suspend fun byXnxq(xnxq: String): List<MeetingEntity>
 }
 
-@Database(entities = [CourseEntity::class, MeetingEntity::class], version = 1, exportSchema = false)
+@Database(entities = [CourseEntity::class, MeetingEntity::class], version = 1, exportSchema = true)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun courseDao(): CourseDao
     abstract fun meetingDao(): MeetingDao

@@ -18,3 +18,10 @@
 -dontwarn org.openjsse.**
 -dontwarn com.google.errorprone.annotations.**
 -dontwarn javax.annotation.**
+
+# 隐私约定：release 包剥离 debug 级日志，保留 warn/error
+-assumenosideeffects class android.util.Log {
+    public static int v(...);
+    public static int d(...);
+    public static int i(...);
+}

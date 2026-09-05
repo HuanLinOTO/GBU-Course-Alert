@@ -20,10 +20,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.launch
+import me.huanlin.gbuca.R
 import me.huanlin.gbuca.reminder.ReminderScheduler
 
 private const val PUSH_MS = 300
@@ -82,11 +84,12 @@ private fun TabsScreen(
         bottomBar = {
             NavigationBar {
                 tabs.forEachIndexed { index, t ->
+                    val label = stringResource(t.label)
                     NavigationBarItem(
                         selected = pagerState.targetPage == index,
                         onClick = { scope.launch { pagerState.animateScrollToPage(index) } },
-                        icon = { Icon(t.icon, contentDescription = t.label) },
-                        label = { Text(t.label) },
+                        icon = { Icon(t.icon, contentDescription = label) },
+                        label = { Text(label) },
                     )
                 }
             }
@@ -112,9 +115,9 @@ private fun TabsScreen(
 }
 
 private val tabs = listOf(
-    Tab("今日", Icons.Filled.DateRange),
-    Tab("课表", Icons.AutoMirrored.Filled.List),
-    Tab("设置", Icons.Filled.Settings),
+    Tab(R.string.tab_today, Icons.Filled.DateRange),
+    Tab(R.string.tab_week, Icons.AutoMirrored.Filled.List),
+    Tab(R.string.tab_settings, Icons.Filled.Settings),
 )
 
-private data class Tab(val label: String, val icon: androidx.compose.ui.graphics.vector.ImageVector)
+private data class Tab(val label: Int, val icon: androidx.compose.ui.graphics.vector.ImageVector)

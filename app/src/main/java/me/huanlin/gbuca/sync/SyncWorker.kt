@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
@@ -34,7 +35,7 @@ class SyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
 
         fun enqueue(context: Context) {
             val req = PeriodicWorkRequestBuilder<SyncWorker>(12, TimeUnit.HOURS)
-                .setConstraints(Constraints.NONE)
+                .setConstraints(Constraints(requiredNetworkType = NetworkType.CONNECTED))
                 .build()
             WorkManager.getInstance(context)
                 .enqueueUniquePeriodicWork(NAME, ExistingPeriodicWorkPolicy.KEEP, req)

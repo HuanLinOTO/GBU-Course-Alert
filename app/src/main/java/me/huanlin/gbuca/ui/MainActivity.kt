@@ -11,6 +11,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.viewmodel.compose.viewModel
 import me.huanlin.gbuca.GbuCaApp
 import me.huanlin.gbuca.sync.SyncWorker
+import me.huanlin.gbuca.ui.theme.GbuCaTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -19,20 +20,22 @@ class MainActivity : ComponentActivity() {
         SyncWorker.enqueue(this)
         val app = GbuCaApp.instance
         setContent {
-            val vm: AppViewModel = viewModel(factory = AppViewModel.Factory)
-            var loggedIn by rememberSaveable { mutableStateOf(app.creds.username != null) }
-            if (loggedIn) {
-                AppNavHost(
-                    vm = vm,
-                    onOpenWebLogin = { WebLoginActivity.start(this) },
-                    reminderScheduler = app.reminderScheduler,
-                )
-            } else {
-                LoginScreen(
-                    vm = vm,
-                    onOpenWebLogin = { WebLoginActivity.start(this) },
-                    onLoggedIn = { loggedIn = true },
-                )
+            GbuCaTheme {
+                val vm: AppViewModel = viewModel(factory = AppViewModel.Factory)
+                var loggedIn by rememberSaveable { mutableStateOf(app.creds.username != null) }
+                if (loggedIn) {
+                    AppNavHost(
+                        vm = vm,
+                        onOpenWebLogin = { WebLoginActivity.start(this) },
+                        reminderScheduler = app.reminderScheduler,
+                    )
+                } else {
+                    LoginScreen(
+                        vm = vm,
+                        onOpenWebLogin = { WebLoginActivity.start(this) },
+                        onLoggedIn = { loggedIn = true },
+                    )
+                }
             }
         }
     }

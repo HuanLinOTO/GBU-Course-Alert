@@ -24,9 +24,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import me.huanlin.gbuca.R
 import me.huanlin.gbuca.domain.logic.ScheduleLogic
+import me.huanlin.gbuca.domain.parser.ScheduleParser
 import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -34,13 +37,15 @@ import java.time.format.DateTimeFormatter
 fun CourseDetailScreen(rwh: String, vm: AppViewModel) {
     val termData by vm.termData.collectAsState()
     val course = termData.courseByRwh[rwh]
+    val titleFallback = stringResource(R.string.detail_title_fallback)
+    val noRoom = stringResource(R.string.no_room)
     val meetings = termData.meetings.filter { it.rwh == rwh }
         .sortedWith(compareBy({ it.weekday }, { it.startTime }))
 
     Column(Modifier.fillMaxSize()) {
-        TopAppBar(title = { Text(course?.name ?: "课程详情") })
+        TopAppBar(title = { Text(course?.name ?: titleFallback) })
         if (course == null) {
-            Text("未找到课程", Modifier.padding(16.dp))
+            Text(stringResource(R.string.detail_not_found), Modifier.padding(16.dp))
             return
         }
         LazyColumn(
@@ -62,34 +67,38 @@ fun CourseDetailScreen(rwh: String, vm: AppViewModel) {
             }
             item {
                 Spacer(Modifier.height(8.dp))
-                Text("上课时间", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.detail_schedule_title), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(4.dp))
             }
             items(
                 meetings,
                 key = { "${it.weekday}-${it.startTime}-${it.role}-${it.weeks.hashCode()}" },
             ) { m ->
+                val wd = weekdayName(m.weekday)
                 Column(Modifier.padding(vertical = 4.dp)) {
                     Row {
                         Text(
-                            ScheduleLogic.weekdayName(m.weekday),
+                            wd,
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.SemiBold,
                         )
                         Spacer(Modifier.width(8.dp))
                         Text(
-                            "第${m.startPeriod}-${m.endPeriod}节 ${m.startTime}-${m.endTime}",
+                            stringResource(
+                                R.string.today_periods, m.startPeriod, m.endPeriod,
+                            ) + " ${m.startTime}-${m.endTime}",
                             style = MaterialTheme.typography.bodyMedium,
                         )
                         Spacer(Modifier.width(8.dp))
                         Text(
-                            if (m.role == "课内实验") "课内实验" else "主讲",
+                            if (m.role == ScheduleParser.ROLE_LAB) stringResource(R.string.badge_lab)
+                            else stringResource(R.string.detail_role_main),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.tertiary,
                         )
                     }
                     Text(
-                        "${ScheduleLogic.formatWeeks(m.weeks)} · ${m.room ?: "无地点"}",
+                        "${ScheduleLogic.formatWeeks(m.weeks)} · ${m.room ?: noRoom}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -106,7 +115,7 @@ fun CourseDetailScreen(rwh: String, vm: AppViewModel) {
             if (course.unparsed.isNotEmpty()) {
                 item {
                     Spacer(Modifier.height(8.dp))
-                    Text("未能解析的原文", style = MaterialTheme.typography.titleSmall,
+                    Text(stringResource(R.string.detail_unparsed), style = MaterialTheme.typography.titleSmall,
                         color = MaterialTheme.colorScheme.error)
                     course.unparsed.forEach {
                         Text(it, style = MaterialTheme.typography.bodySmall)
@@ -124,11 +133,16 @@ private fun InfoGrid(
     capacity: Int?, enrolled: Int?,
 ) {
     val rows = listOf(
-        "课程代码" to code, "课序号" to seq, "班级" to className,
-        "课程性质" to nature, "课程类别" to category, "开课学院" to college,
-        "学分" to credits.toString(), "学时" to hours.toString(),
-        "选课时间" to enrollTime,
-        "容量/已选" to if (capacity != null) "$capacity / ${enrolled ?: "-"}" else null,
+        stringResource(R.string.detail_label_code) to code,
+        stringResource(R.string.detail_label_seq) to seq,
+        stringResource(R.string.detail_label_class) to className,
+        stringResource(R.string.detail_label_nature) to nature,
+        stringResource(R.string.detail_label_category) to category,
+        stringResource(R.string.detail_label_college) to college,
+        stringResource(R.string.detail_label_credits) to credits.toString(),
+        stringResource(R.string.detail_label_hours) to hours.toString(),
+        stringResource(R.string.detail_label_enroll_time) to enrollTime,
+        stringResource(R.string.detail_label_capacity) to if (capacity != null) "$capacity / ${enrolled ?: "-"}" else null,
     ).filter { it.second != null }
 
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {

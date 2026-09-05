@@ -33,6 +33,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -40,9 +41,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import me.huanlin.gbuca.GbuCaApp
+import me.huanlin.gbuca.R
+import me.huanlin.gbuca.reminder.LiveUpdateNotifier
 import me.huanlin.gbuca.reminder.ReminderScheduler
 import me.huanlin.gbuca.widget.TodayWidgetReceiver
 import java.time.LocalDate
@@ -56,9 +61,11 @@ fun SettingsScreen(
 ) {
     val context = LocalContext.current
     val ui by vm.ui.collectAsState()
-    var username by rememberSaveable { mutableStateOf(vm.let { me.huanlin.gbuca.GbuCaApp.instance.creds.username } ?: "") }
-    var password by rememberSaveable { mutableStateOf("") }
-    var savedTick by remember { mutableStateOf(0) }
+    val remindersEnabled by vm.remindersEnabled.collectAsState()
+    val reminderMinutes by vm.reminderMinutes.collectAsState()
+    var username by rememberSaveable { mutableStateOf(GbuCaApp.instance.creds.username ?: "") }
+    var password by remember { mutableStateOf("") }
+    var savedTick by remember { mutableIntStateOf(0) }
 
     var notifGranted by remember {
         mutableStateOf(
@@ -76,28 +83,28 @@ fun SettingsScreen(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        TopAppBar(title = { Text("设置") })
+        TopAppBar(title = { Text(stringResource(R.string.settings_title)) })
 
         // ---- 账号 ----
-        SectionTitle("账号")
+        SectionTitle(stringResource(R.string.settings_section_account))
         OutlinedTextField(
             value = username,
             onValueChange = { username = it },
-            label = { Text("学号") },
+            label = { Text(stringResource(R.string.login_student_id)) },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
         )
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
-            label = { Text(if (username.isBlank()) "密码" else "密码（留空保持不变）") },
+            label = { Text(if (username.isBlank()) stringResource(R.string.login_password) else stringResource(R.string.settings_password_keep)) },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             visualTransformation = PasswordVisualTransformation(),
             supportingText = {
                 if (password.any { it in '\uFF01'..'\uFF5E' || it == '\u3000' }) {
                     Text(
-                        "检测到全角字符（如 ！＃＠）。若登录失败，请改用半角符号重新输入",
+                        stringResource(R.string.login_fullwidth_hint),
                         color = MaterialTheme.colorScheme.error,
                     )
                 }
@@ -107,23 +114,25 @@ fun SettingsScreen(
             Button(onClick = {
                 if (username.isNotBlank()) {
                     vm.saveCredentials(username, password.ifBlank {
-                        me.huanlin.gbuca.GbuCaApp.instance.creds.password ?: ""
+                        GbuCaApp.instance.creds.password ?: ""
                     })
                     savedTick++
                     vm.sync()
                 }
             }, enabled = !ui.syncing) {
                 if (ui.syncing) {
-                    androidx.compose.material3.CircularProgressIndicator(
+                    CircularProgressIndicator(
                         Modifier.size(16.dp), strokeWidth = 2.dp,
                         color = MaterialTheme.colorScheme.onPrimary,
                     )
                     Spacer(Modifier.width(8.dp))
                 }
-                Text(if (ui.syncing) "同步中…" else "保存并同步")
+                Text(if (ui.syncing) stringResource(R.string.settings_syncing) else stringResource(R.string.settings_save_and_sync))
             }
             Spacer(Modifier.width(12.dp))
-            OutlinedButton(onClick = { vm.sync() }, enabled = !ui.syncing) { Text("仅同步") }
+            OutlinedButton(onClick = { vm.sync() }, enabled = !ui.syncing) {
+                Text(stringResource(R.string.settings_sync_only))
+            }
         }
         ui.message?.let {
             Text(
@@ -135,75 +144,68 @@ fun SettingsScreen(
         }
 
         // ---- 提醒 ----
-        SectionTitle("上课提醒")
+        SectionTitle(stringResource(R.string.settings_section_reminder))
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("启用提醒", Modifier.weight(1f))
+            Text(stringResource(R.string.settings_enable_reminders), Modifier.weight(1f))
             Switch(
-                checked = vm.settings.remindersEnabled,
-                onCheckedChange = { on ->
-                    vm.settings.remindersEnabled = on
-                    if (on) reminderScheduler.rescheduleAsync() else reminderScheduler.cancelAll()
-                },
+                checked = remindersEnabled,
+                onCheckedChange = { on -> vm.setRemindersEnabled(on) },
             )
         }
-        Text("提前提醒时间", style = MaterialTheme.typography.bodyMedium)
+        Text(stringResource(R.string.settings_reminder_minutes_label), style = MaterialTheme.typography.bodyMedium)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             listOf(5, 10, 15, 20, 30).forEach { min ->
                 FilterChip(
-                    selected = vm.settings.reminderMinutes == min,
-                    onClick = {
-                        vm.settings.reminderMinutes = min
-                        if (vm.settings.remindersEnabled) reminderScheduler.rescheduleAsync()
-                    },
-                    label = { Text("${min}分钟") },
+                    selected = reminderMinutes == min,
+                    onClick = { vm.setReminderMinutes(min) },
+                    label = { Text(stringResource(R.string.settings_reminder_minutes_chip, min)) },
                 )
             }
         }
         if (!reminderScheduler.canScheduleExact()) {
             Text(
-                "未授予精确闹钟权限，提醒可能延迟",
+                stringResource(R.string.settings_exact_alarm_missing),
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodySmall,
             )
             OutlinedButton(onClick = { reminderScheduler.requestExactPermission() }) {
-                Text("授予精确闹钟权限")
+                Text(stringResource(R.string.settings_grant_exact_alarm))
             }
         }
         if (!notifGranted && Build.VERSION.SDK_INT >= 33) {
             Text(
-                "未授予通知权限",
+                stringResource(R.string.settings_notif_missing),
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodySmall,
             )
             OutlinedButton(onClick = { notifLauncher.launch(Manifest.permission.POST_NOTIFICATIONS) }) {
-                Text("授予通知权限")
+                Text(stringResource(R.string.settings_grant_notif))
             }
         }
         OutlinedButton(onClick = {
             context.startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
-        }) { Text("电池优化白名单（可选）") }
+        }) { Text(stringResource(R.string.settings_battery_whitelist)) }
 
         // ---- Live Update ----
-        SectionTitle("实时通知 (Live Update)")
+        SectionTitle(stringResource(R.string.settings_section_live))
         Text(
-            "开课前按「提前提醒时间」显示候课倒计时，上课期间常驻显示课程进度，每分钟刷新（Android 16+ 效果最佳）。\n" +
-                "ColorOS 用户：应用详情 → 通知管理 → 流体云，允许显示",
+            stringResource(R.string.settings_live_desc),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedButton(onClick = { me.huanlin.gbuca.reminder.LiveUpdateNotifier.showTest(context) }) {
-                Text("测试完整流程（12倍速）")
+            OutlinedButton(onClick = { LiveUpdateNotifier.showTest(context) }) {
+                Text(stringResource(R.string.settings_live_test))
             }
-            OutlinedButton(onClick = { me.huanlin.gbuca.reminder.LiveUpdateNotifier.cancel(context) }) {
-                Text("停止")
+            OutlinedButton(onClick = { LiveUpdateNotifier.cancel(context) }) {
+                Text(stringResource(R.string.settings_live_stop))
             }
         }
 
         HorizontalDivider(Modifier.padding(vertical = 8.dp))
 
         // ---- 学期配置 ----
-        SectionTitle("学期配置")
+        SectionTitle(stringResource(R.string.settings_section_term))
         SemesterStartDatePicker(
             current = vm.semesterStartMonday,
             calibrating = ui.syncing,
@@ -214,11 +216,11 @@ fun SettingsScreen(
             Text(
                 it,
                 style = MaterialTheme.typography.bodySmall,
-                color = if (it.startsWith("校准成功")) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                color = if (ui.calibrateOk == true) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
             )
         }
         Text(
-            "「第 X 周」依据学期第一周周一计算。通常已在同步时从教务系统自动校准，如与实际不符可手动修改。",
+            stringResource(R.string.settings_term_hint),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -226,18 +228,20 @@ fun SettingsScreen(
         HorizontalDivider(Modifier.padding(vertical = 8.dp))
 
         // ---- 关于 ----
-        SectionTitle("关于")
+        SectionTitle(stringResource(R.string.settings_section_about))
         Text(
-            "GBU 课表 · 数据仅存本机（凭据经 Keystore 加密），不同步任何服务器。\n" +
-                "半角数字之学号 + 明文密码经 HTTPS 直连学校 iAAA 认证。",
+            stringResource(R.string.settings_about),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         val lastSync = vm.settings.lastSyncAt
         if (lastSync > 0) {
             Text(
-                "上次同步：${java.time.Instant.ofEpochMilli(lastSync).atZone(java.time.ZoneId.systemDefault())
-                    .format(DateTimeFormatter.ofPattern("MM-dd HH:mm"))}",
+                stringResource(
+                    R.string.settings_last_sync,
+                    java.time.Instant.ofEpochMilli(lastSync).atZone(java.time.ZoneId.systemDefault())
+                        .format(DateTimeFormatter.ofPattern("MM-dd HH:mm")),
+                ),
                 style = MaterialTheme.typography.bodySmall,
             )
         }
@@ -268,7 +272,7 @@ private fun SemesterStartDatePicker(
     OutlinedTextField(
         value = text,
         onValueChange = { text = it },
-        label = { Text("学期第一周周一 (YYYY-MM-DD)") },
+        label = { Text(stringResource(R.string.settings_term_start_label)) },
         modifier = Modifier.fillMaxWidth(),
         singleLine = true,
         isError = runCatching { LocalDate.parse(text) }.isFailure,
@@ -279,11 +283,11 @@ private fun SemesterStartDatePicker(
                 CircularProgressIndicator(Modifier.size(14.dp), strokeWidth = 2.dp)
                 Spacer(Modifier.width(8.dp))
             }
-            Text(if (calibrating) "校准中…" else "从教务系统校准")
+            Text(if (calibrating) stringResource(R.string.settings_calibrating) else stringResource(R.string.settings_calibrate))
         }
         Spacer(Modifier.width(12.dp))
         TextButton(onClick = {
             runCatching { LocalDate.parse(text) }.getOrNull()?.let(onConfirm)
-        }) { Text("保存") }
+        }) { Text(stringResource(R.string.settings_save)) }
     }
 }

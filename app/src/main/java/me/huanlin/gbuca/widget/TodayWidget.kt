@@ -31,6 +31,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import me.huanlin.gbuca.GbuCaApp
+import me.huanlin.gbuca.R
 import me.huanlin.gbuca.domain.logic.ScheduleLogic
 import me.huanlin.gbuca.domain.model.Meeting
 import me.huanlin.gbuca.ui.MainActivity
@@ -99,17 +100,22 @@ class TodayWidget : GlanceAppWidget() {
 
 @Composable
 private fun WidgetContent(state: WidgetState) {
+    val context = androidx.glance.LocalContext.current
     Column(
         modifier = GlanceModifier.fillMaxSize().clickable(actionStartActivity<MainActivity>())
     ) {
         Row(modifier = GlanceModifier.fillMaxWidth().padding(8.dp)) {
             Text(
-                text = if (state.week != null) "第${state.week}周 · ${weekdayLabel(state.date)}" else weekdayLabel(state.date),
+                text = if (state.week != null) {
+                    context.getString(R.string.widget_week_day, state.week, weekdayLabel(context, state.date))
+                } else {
+                    weekdayLabel(context, state.date)
+                },
                 style = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.Bold),
             )
             Spacer(GlanceModifier.defaultWeight())
             Text(
-                text = "${state.items.size} 节课",
+                text = context.getString(R.string.widget_course_count, state.items.size),
                 style = TextStyle(fontSize = 12.sp),
             )
         }
@@ -118,7 +124,7 @@ private fun WidgetContent(state: WidgetState) {
                 modifier = GlanceModifier.fillMaxSize().padding(bottom = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text("今天没有课 🎉", style = TextStyle(fontSize = 14.sp))
+                Text(context.getString(R.string.widget_empty), style = TextStyle(fontSize = 14.sp))
             }
         } else {
             Column(modifier = GlanceModifier.fillMaxSize().padding(horizontal = 10.dp)) {
@@ -153,7 +159,7 @@ private fun WidgetContent(state: WidgetState) {
                 }
                 if (state.items.size > 4) {
                     Text(
-                        "还有 ${state.items.size - 4} 节…",
+                        context.getString(R.string.widget_more, state.items.size - 4),
                         style = TextStyle(fontSize = 11.sp, color = GlanceTheme.colors.onSurfaceVariant),
                         modifier = GlanceModifier.padding(top = 2.dp),
                     )
@@ -163,9 +169,8 @@ private fun WidgetContent(state: WidgetState) {
     }
 }
 
-private fun weekdayLabel(d: LocalDate): String = when (d.dayOfWeek.value) {
-    1 -> "周一"; 2 -> "周二"; 3 -> "周三"; 4 -> "周四"; 5 -> "周五"; 6 -> "周六"; else -> "周日"
-}
+private fun weekdayLabel(context: Context, d: LocalDate): String =
+    context.resources.getStringArray(R.array.weekdays).getOrElse(d.dayOfWeek.value - 1) { "?" }
 
 class TodayWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = TodayWidget()
