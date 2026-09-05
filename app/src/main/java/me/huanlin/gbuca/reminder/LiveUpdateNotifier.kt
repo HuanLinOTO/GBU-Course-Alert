@@ -13,6 +13,7 @@ import android.os.Build
 import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.IconCompat
 import me.huanlin.gbuca.R
 import java.time.Instant
@@ -156,7 +157,8 @@ class LiveUpdateNotifier {
         ) {
             ensureChannel(context)
             if (Build.VERSION.SDK_INT >= 33 &&
-                ContextCompat_CheckSelfPermission(context) != PackageManager.PERMISSION_GRANTED
+                ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) !=
+                PackageManager.PERMISSION_GRANTED
             ) return
 
             // 虚拟时钟：anchor 时刻对应虚拟 anchor，之后按 scale 倍速流动（scale=1 即真实时间）
@@ -216,24 +218,23 @@ class LiveUpdateNotifier {
             val remainMin = ((endMs - now) / 60_000L).coerceAtLeast(0L)
             val untilStartMin = ((startMs - now).coerceAtLeast(0L) + 59_999L) / 60_000L
             val text = if (inClass) {
-                buildString {
-                    append("至 $endText")
-                    if (room.isNotBlank()) append(" · $room")
-                    append(" · 已进行 $pct%")
-                }
+                if (room.isNotBlank()) context.getString(R.string.notif_live_in_class_text_room, endText, room, pct)
+                else context.getString(R.string.notif_live_in_class_text, endText, pct)
             } else {
-                buildString {
-                    append("$startText 开课")
-                    if (room.isNotBlank()) append(" · $room")
-                    append(" · ${untilStartMin}分钟后开始")
-                }
+                if (room.isNotBlank()) context.getString(R.string.notif_live_wait_text_room, startText, room, untilStartMin)
+                else context.getString(R.string.notif_live_wait_text, startText, untilStartMin)
             }
 
             val builder = NotificationCompat.Builder(context, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_stat_class)
                 .setLargeIcon(largeIcon(name))
                 .setColor(ACCENT)
-                .setContentTitle(if (inClass) "上课中 · $name" else "即将上课 · $name")
+                .setContentTitle(
+                    context.getString(
+                        if (inClass) R.string.notif_live_in_class_title else R.string.notif_live_wait_title,
+                        name,
+                    )
+                )
                 .setContentText(text)
                 .setStyle(style)
                 .setOngoing(true)
@@ -247,10 +248,15 @@ class LiveUpdateNotifier {
                     .setChronometerCountDown(true)
             } else {
                 // 12 倍速测试：虚拟时钟与系统时钟不一致，只能靠 re-post 文本
-                builder.setShortCriticalText(if (inClass) "剩${remainMin}分" else "${untilStartMin}分后")
+                builder.setShortCriticalText(
+                    context.getString(
+                        if (inClass) R.string.notif_live_short_remain else R.string.notif_live_short_until,
+                        if (inClass) remainMin else untilStartMin,
+                    )
+                )
             }
             val notif = builder
-                .addAction(NotificationCompat.Action(R.drawable.ic_stat_class, "打开课表", mainPendingIntent(context)))
+                .addAction(NotificationCompat.Action(R.drawable.ic_stat_class, context.getString(R.string.notif_live_action_open), mainPendingIntent(context)))
                 .build()
             NotificationManagerCompat.from(context).notify(NOTIF_ID, notif)
         }
@@ -310,7 +316,7 @@ class LiveUpdateNotifier {
         /** 课程首字彩色圆标，颜色按课程名稳定取色。 */
         private fun largeIcon(name: String): Bitmap {
             val px = 192
-            val bmp = Bitmap.createBitmap(px, px, Bitmap.Config.ARGB_8888)
+            val bmp = androidx.core.graphics.createBitmap(px, px, Bitmap.Config.ARGB_8888)
             val canvas = Canvas(bmp)
             val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 color = ICON_COLORS[(name.hashCode().let { if (it < 0) -it else it }) % ICON_COLORS.size]
@@ -331,10 +337,5 @@ class LiveUpdateNotifier {
             )
             return bmp
         }
-
-        private fun ContextCompat_CheckSelfPermission(context: Context): Int =
-            androidx.core.content.ContextCompat.checkSelfPermission(
-                context, android.Manifest.permission.POST_NOTIFICATIONS
-            )
     }
 }

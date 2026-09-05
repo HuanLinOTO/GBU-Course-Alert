@@ -83,7 +83,7 @@ class GbuClient(private val cookieJar: PersistentCookieJar) {
         val body = apiClient.newCall(req).execute().use { resp ->
             resp.body?.string() ?: throw GbuException.Network(java.io.IOException("空响应"))
         }
-        android.util.Log.d("GbuClient", "oauthlogin 响应: ${body.take(300)}")
+        // 隐私约定：不记录响应内容（含 token / 密码相关字段）到日志
         val obj: JsonObject = runCatching { json.parseToJsonElement(body) as? JsonObject }
             .getOrElse { throw GbuException.ApiError("iAAA 响应异常: ${body.take(120)}") }
             ?: throw GbuException.ApiError("iAAA 响应异常: ${body.take(120)}")
@@ -161,21 +161,21 @@ class GbuClient(private val cookieJar: PersistentCookieJar) {
 
     private fun <T> parseApiResponse(resp: Response, parse: (String) -> T): T {
         if (resp.isRedirect) {
-            android.util.Log.w("GbuClient", "302 redirect → 会话过期: ${resp.header("Location")}")
+            android.util.Log.w("GbuClient", "302 redirect → 会话过期")
             throw GbuException.SessionExpired()
         }
         val text = resp.body?.string() ?: throw GbuException.Network(java.io.IOException("空响应"))
         if (!resp.isSuccessful) {
-            android.util.Log.w("GbuClient", "HTTP ${resp.code}: ${text.take(200)}")
+            android.util.Log.w("GbuClient", "HTTP ${resp.code}")
             throw GbuException.ApiError("HTTP ${resp.code}")
         }
         val trimmed = text.trimStart()
         if (trimmed.startsWith("<")) {
-            android.util.Log.w("GbuClient", "返回 HTML（登录页）→ 会话过期: ${trimmed.take(150)}")
+            android.util.Log.w("GbuClient", "返回 HTML（登录页）→ 会话过期")
             throw GbuException.SessionExpired()
         }
         return runCatching { parse(text) }.getOrElse {
-            android.util.Log.w("GbuClient", "解析失败: ${text.take(300)}", it)
+            android.util.Log.w("GbuClient", "响应解析失败")
             throw GbuException.ApiError("响应解析失败")
         }
     }

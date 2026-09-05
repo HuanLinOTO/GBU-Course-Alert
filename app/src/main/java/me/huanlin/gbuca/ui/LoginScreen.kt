@@ -23,15 +23,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import me.huanlin.gbuca.R
 
 /** 首次使用登录页：学号/密码登录 iAAA，成功后即同步课表。 */
 @Composable
@@ -42,7 +45,8 @@ fun LoginScreen(
 ) {
     val ui by vm.ui.collectAsState()
     var username by rememberSaveable { mutableStateOf("") }
-    var password by rememberSaveable { mutableStateOf("") }
+    // 密码不使用 rememberSaveable：避免明文进入 InstanceState / Bundle
+    var password by remember { mutableStateOf("") }
     val focus = LocalFocusManager.current
 
     fun submit() {
@@ -62,18 +66,18 @@ fun LoginScreen(
     ) {
         Spacer(Modifier.height(88.dp))
         Text(
-            "泥吼！",
+            stringResource(R.string.login_hello),
             style = MaterialTheme.typography.displaySmall,
             fontWeight = FontWeight.Bold,
         )
         Text(
-            "湾大人",
+            stringResource(R.string.login_hello_gbu),
             style = MaterialTheme.typography.displaySmall,
             fontWeight = FontWeight.Bold,
         )
         Spacer(Modifier.height(10.dp))
         Text(
-            "登录 iAAA，同步你的湾大课表",
+            stringResource(R.string.login_subtitle),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -81,7 +85,7 @@ fun LoginScreen(
         OutlinedTextField(
             value = username,
             onValueChange = { username = it },
-            label = { Text("学号") },
+            label = { Text(stringResource(R.string.login_student_id)) },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
@@ -90,7 +94,7 @@ fun LoginScreen(
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
-            label = { Text("密码") },
+            label = { Text(stringResource(R.string.login_password)) },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             visualTransformation = PasswordVisualTransformation(),
@@ -99,7 +103,7 @@ fun LoginScreen(
             supportingText = {
                 if (password.any { it in '\uFF01'..'\uFF5E' || it == '\u3000' }) {
                     Text(
-                        "检测到全角字符（如 ！＃＠）。若登录失败，请改用半角符号重新输入",
+                        stringResource(R.string.login_fullwidth_hint),
                         color = MaterialTheme.colorScheme.error,
                     )
                 }
@@ -117,9 +121,9 @@ fun LoginScreen(
                     color = MaterialTheme.colorScheme.onPrimary,
                 )
                 Spacer(Modifier.width(10.dp))
-                Text("登录中…")
+                Text(stringResource(R.string.login_button_in_progress))
             } else {
-                Text("登录")
+                Text(stringResource(R.string.login_button))
             }
         }
         ui.message?.let {
@@ -133,7 +137,7 @@ fun LoginScreen(
         if (ui.needWebLogin) {
             Spacer(Modifier.height(8.dp))
             OutlinedButton(onClick = onOpenWebLogin, modifier = Modifier.fillMaxWidth()) {
-                Text("触发验证码？使用网页登录")
+                Text(stringResource(R.string.login_open_web))
             }
         }
     }

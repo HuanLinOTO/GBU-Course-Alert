@@ -1,6 +1,7 @@
 package me.huanlin.gbuca.data.local
 
 import android.content.Context
+import androidx.core.content.edit
 import java.time.DayOfWeek
 import java.time.LocalDate
 
@@ -20,17 +21,17 @@ class SettingsStore(context: Context) {
     }
 
     fun setSemesterStartMonday(xnxq: String, date: LocalDate) {
-        prefs.edit().putString("sem_start_$xnxq", date.toString()).apply()
+        prefs.edit { putString("sem_start_$xnxq", date.toString()) }
     }
 
     /** 清除用户手动设置（用于「从教务系统校准」强制覆盖）。 */
     fun clearSemesterStartCustomized(xnxq: String) {
-        prefs.edit().remove("sem_start_$xnxq").apply()
+        prefs.edit { remove("sem_start_$xnxq") }
     }
 
     /** 教务系统 getXnxqByRq 校准出的第 1 周周一（优先级低于用户手动设置）。 */
     fun setServerSemesterStartMonday(xnxq: String, date: LocalDate) {
-        prefs.edit().putString("sem_start_server_$xnxq", date.toString()).apply()
+        prefs.edit { putString("sem_start_server_$xnxq", date.toString()) }
     }
 
     fun isSemesterStartCustomized(xnxq: String): Boolean =
@@ -39,24 +40,24 @@ class SettingsStore(context: Context) {
     /** 用户选择的 xnxq；null = 自动。 */
     var selectedXnxq: String?
         get() = prefs.getString("selected_xnxq", null)
-        set(v) = prefs.edit().putString("selected_xnxq", v).apply()
+        set(v) = prefs.edit { putString("selected_xnxq", v) }
 
     var reminderMinutes: Int
         get() = prefs.getInt("reminder_minutes", 15)
-        set(v) = prefs.edit().putInt("reminder_minutes", v.coerceIn(0, 120)).apply()
+        set(v) = prefs.edit { putInt("reminder_minutes", v.coerceIn(0, 120)) }
 
     var remindersEnabled: Boolean
         get() = prefs.getBoolean("reminders_enabled", true)
-        set(v) = prefs.edit().putBoolean("reminders_enabled", v).apply()
+        set(v) = prefs.edit { putBoolean("reminders_enabled", v) }
 
     var lastSyncAt: Long
         get() = prefs.getLong("last_sync_at", 0L)
-        set(v) = prefs.edit().putLong("last_sync_at", v).apply()
+        set(v) = prefs.edit { putLong("last_sync_at", v) }
 
     /** "xnxq|epochDay|idx" 列表，用于重排/取消闹钟。 */
     var scheduledAlarmKeys: Set<String>
         get() = prefs.getStringSet("scheduled_alarms", emptySet()) ?: emptySet()
-        set(v) = prefs.edit().putStringSet("scheduled_alarms", v).apply()
+        set(v) = prefs.edit { putStringSet("scheduled_alarms", v) }
 
     companion object {
         /** "2026-20271" → 2026-08-31（9月1日当周周一）；"2026-20272" → 次年3月1日当周周一。 */

@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import me.huanlin.gbuca.GbuCaApp
+import me.huanlin.gbuca.R
 import me.huanlin.gbuca.data.GbuException
 import me.huanlin.gbuca.data.repo.CourseRepository
 import me.huanlin.gbuca.domain.logic.ScheduleLogic
@@ -21,6 +22,24 @@ class AppViewModel : ViewModel() {
     private val repo: CourseRepository = app.repo
 
     val settings = app.settings
+
+    /** 设置项的可观察快照：SettingsStore 为普通持久化对象，UI 经由 StateFlow 响应变更。 */
+    private val _remindersEnabled = MutableStateFlow(app.settings.remindersEnabled)
+    val remindersEnabled: StateFlow<Boolean> = _remindersEnabled
+    private val _reminderMinutes = MutableStateFlow(app.settings.reminderMinutes)
+    val reminderMinutes: StateFlow<Int> = _reminderMinutes
+
+    fun setRemindersEnabled(on: Boolean) {
+        settings.remindersEnabled = on
+        _remindersEnabled.value = on
+        if (on) app.reminderScheduler.rescheduleAsync() else app.reminderScheduler.cancelAll()
+    }
+
+    fun setReminderMinutes(min: Int) {
+        settings.reminderMinutes = min
+        _reminderMinutes.value = min
+        if (settings.remindersEnabled) app.reminderScheduler.rescheduleAsync()
+    }
 
     /** 当前选中的 xnxq；null = 自动（当前学期）。 */
     val selectedXnxq: StateFlow<String?> = MutableStateFlow(app.settings.selectedXnxq)
@@ -36,20 +55,22 @@ class AppViewModel : ViewModel() {
         val syncing: Boolean = false,
         val message: String? = null,
         val needWebLogin: Boolean = false,
+        /** 学期校准消息语义：true=成功（主色）、false=失败（错误色）、null=其他消息。 */
+        val calibrateOk: Boolean? = null,
     )
 
     val ui = MutableStateFlow(UiState())
 
     fun sync() {
         viewModelScope.launch {
-            ui.value = ui.value.copy(syncing = true, message = null)
+            ui.value = ui.value.copy(syncing = true, message = null, calibrateOk = null)
             val result = runCatching { repo.sync(xnxq) }
             ui.value = when {
                 result.isSuccess -> {
                     me.huanlin.gbuca.widget.TodayWidgetReceiver.refreshAll(app)
                     ui.value.copy(
                         syncing = false,
-                        message = "已同步 ${result.getOrThrow().courseCount} 门课程",
+                        message = app.getString(R.string.msg_synced_courses, result.getOrThrow().courseCount),
                     )
                 }
                 else -> ui.value.copy(
@@ -66,7 +87,7 @@ class AppViewModel : ViewModel() {
     /** 首次登录：先认证，成功才保存凭据并同步课表。 */
     fun login(u: String, p: String, onSuccess: () -> Unit) {
         viewModelScope.launch {
-            ui.value = ui.value.copy(syncing = true, message = null, needWebLogin = false)
+            ui.value = ui.value.copy(syncing = true, message = null, needWebLogin = false, calibrateOk = null)
             val result = runCatching {
                 app.client.login(u, p)
                 app.creds.save(u, p)
@@ -87,12 +108,12 @@ class AppViewModel : ViewModel() {
     }
 
     private fun friendlyError(e: Throwable?): String = when (e) {
-        is GbuException.BadCredentials -> "登录失败：${e.message}"
-        is GbuException.NeedCaptcha -> "需要验证码，请使用网页登录"
-        is GbuException.NeedSms -> "需要短信验证码，请使用网页登录"
-        is GbuException.SessionExpired -> "会话已过期，请重新同步"
-        is GbuException.Network -> "网络错误，请检查连接"
-        else -> "同步失败：${e?.message ?: "未知错误"}"
+        is GbuException.BadCredentials -> app.getString(R.string.error_login_failed, e.message)
+        is GbuException.NeedCaptcha -> app.getString(R.string.error_need_captcha)
+        is GbuException.NeedSms -> app.getString(R.string.error_need_sms)
+        is GbuException.SessionExpired -> app.getString(R.string.error_session_expired)
+        is GbuException.Network -> app.getString(R.string.error_network)
+        else -> app.getString(R.string.error_sync_failed, e?.message ?: "?")
     }
 
     fun saveCredentials(u: String, p: String) {
@@ -111,16 +132,17 @@ class AppViewModel : ViewModel() {
     /** 手动从教务系统校准「第 1 周周一」（清除手动设置并强制生效）。 */
     fun calibrateSemesterStartFromServer() {
         viewModelScope.launch {
-            ui.value = ui.value.copy(syncing = true, message = null)
+            ui.value = ui.value.copy(syncing = true, message = null, calibrateOk = null)
             val result = runCatching { repo.calibrateSemesterStart(xnxq, force = true) }
             val date = result.getOrNull()
             ui.value = ui.value.copy(
                 syncing = false,
                 message = when {
-                    date != null -> "校准成功：第 1 周周一 = $date"
+                    date != null -> app.getString(R.string.msg_calibrate_success, date)
                     result.isFailure -> friendlyError(result.exceptionOrNull())
-                    else -> "无法校准：教务系统未返回该学期的周次信息"
+                    else -> app.getString(R.string.msg_calibrate_unavailable)
                 },
+                calibrateOk = if (date != null) true else false,
             )
             if (date != null) {
                 app.reminderScheduler.rescheduleAsync()

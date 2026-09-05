@@ -19,7 +19,7 @@ android {
     defaultConfig {
         applicationId = "me.huanlin.gbuca"
         minSdk = 26
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 1
         versionName = "0.1.0"
     }
@@ -61,6 +61,10 @@ kotlin {
     compilerOptions {
         jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
     }
+}
+
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
 }
 
 dependencies {

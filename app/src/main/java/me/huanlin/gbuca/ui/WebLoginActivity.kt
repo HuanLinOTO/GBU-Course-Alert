@@ -9,12 +9,9 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
+import androidx.activity.OnBackPressedCallback
 import me.huanlin.gbuca.GbuCaApp
 import me.huanlin.gbuca.data.remote.GbuClient
-import me.huanlin.gbuca.sync.SyncWorker
-import me.huanlin.gbuca.widget.TodayWidgetReceiver
-import kotlin.coroutines.resume
-import kotlinx.coroutines.suspendCancellableCoroutine
 
 /**
  * WebView SSO 兜底登录：加载 iAAA oauth.jsp，用户完成登录（可含验证码）后，
@@ -28,17 +25,29 @@ class WebLoginActivity : ComponentActivity() {
         }
     }
 
+    private lateinit var webView: WebView
+
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val app = GbuCaApp.instance
-        val wv = WebView(this)
-        setContentView(wv)
-        CookieManager.getInstance().setAcceptThirdPartyCookies(wv, true)
-        wv.settings.javaScriptEnabled = true
-        wv.settings.domStorageEnabled = true
+        webView = WebView(this)
+        setContentView(webView)
+        CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true)
+        webView.settings.javaScriptEnabled = true
+        webView.settings.domStorageEnabled = true
+        // 硬化：SSO 登录页无需本地文件/内容提供器访问
+        webView.settings.allowFileAccess = false
+        webView.settings.allowContentAccess = false
 
-        wv.webViewClient = object : WebViewClient() {
+        // 系统返回键优先回退网页历史，而非直接退出
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (webView.canGoBack()) webView.goBack() else finish()
+            }
+        })
+
+        webView.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                 return false
             }
@@ -55,6 +64,20 @@ class WebLoginActivity : ComponentActivity() {
                 }
             }
         }
-        wv.loadUrl(GbuClient.webLoginUrl())
+        if (savedInstanceState != null) {
+            webView.restoreState(savedInstanceState)
+        } else {
+            webView.loadUrl(GbuClient.webLoginUrl())
+        }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        webView.saveState(outState)
+    }
+
+    override fun onDestroy() {
+        webView.destroy()
+        super.onDestroy()
     }
 }

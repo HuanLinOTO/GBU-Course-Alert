@@ -15,6 +15,10 @@ import me.huanlin.gbuca.GbuCaApp
 import me.huanlin.gbuca.R
 import me.huanlin.gbuca.domain.logic.ScheduleLogic
 import me.huanlin.gbuca.domain.model.Meeting
+import me.huanlin.gbuca.widget.TodayWidgetReceiver
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -143,7 +147,7 @@ class ReminderScheduler(
         val pi = pending(key, m, true)
         val trigger = at.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
         try {
-            if (Build.VERSION.SDK_INT >= 23 && (Build.VERSION.SDK_INT < 31 || alarmManager.canScheduleExactAlarms())) {
+            if (Build.VERSION.SDK_INT < 31 || alarmManager.canScheduleExactAlarms()) {
                 alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, trigger, pi)
             } else {
                 alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, trigger, pi)
@@ -194,8 +198,10 @@ class AlarmReceiver : BroadcastReceiver() {
 
         val notif = NotificationCompat.Builder(context, ReminderScheduler.CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_stat_class)
-            .setContentTitle("即将上课 · $name")
-            .setContentText(if (room.isBlank()) time else "$time · $room")
+            .setContentTitle(context.getString(R.string.notif_class_title, name))
+            .setContentText(
+                if (room.isBlank()) time else context.getString(R.string.notif_class_text, time, room)
+            )
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setAutoCancel(true)
@@ -215,9 +221,15 @@ class BootReceiver : BroadcastReceiver() {
         val action = intent.action ?: return
         if (action != Intent.ACTION_BOOT_COMPLETED && action != Intent.ACTION_MY_PACKAGE_REPLACED) return
         val app = context.applicationContext as? GbuCaApp ?: return
-        Thread {
-            runCatching { app.reminderScheduler.reschedule() }
-            runCatching { kotlinx.coroutines.runBlocking { me.huanlin.gbuca.widget.TodayWidgetReceiver.refreshAll(app) } }
-        }.start()
+        // goAsync：异步完成重排，避免 onReceive 返回后进程降级导致线程被杀
+        val pending = goAsync()
+        CoroutineScope(Dispatchers.Default).launch {
+            try {
+                runCatching { app.reminderScheduler.reschedule() }
+                runCatching { TodayWidgetReceiver.refreshAll(app) }
+            } finally {
+                pending.finish()
+            }
+        }
     }
 }

@@ -1,0 +1,212 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "e03d849c9c8bf7e9986b194ab14d1c4d",
+    "entities": [
+      {
+        "tableName": "courses",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`rwh` TEXT NOT NULL, `xnxq` TEXT NOT NULL, `name` TEXT NOT NULL, `nameEn` TEXT, `code` TEXT, `seq` TEXT, `className` TEXT, `credits` REAL NOT NULL, `hours` REAL NOT NULL, `nature` TEXT, `category` TEXT, `college` TEXT, `enrollTime` TEXT, `capacity` INTEGER, `enrolled` INTEGER, `rawKcxx` TEXT NOT NULL, `unparsed` TEXT NOT NULL, `syncedAt` INTEGER NOT NULL, PRIMARY KEY(`rwh`))",
+        "fields": [
+          {
+            "fieldPath": "rwh",
+            "columnName": "rwh",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "xnxq",
+            "columnName": "xnxq",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "nameEn",
+            "columnName": "nameEn",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "code",
+            "columnName": "code",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "seq",
+            "columnName": "seq",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "className",
+            "columnName": "className",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "credits",
+            "columnName": "credits",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "hours",
+            "columnName": "hours",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "nature",
+            "columnName": "nature",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "category",
+            "columnName": "category",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "college",
+            "columnName": "college",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "enrollTime",
+            "columnName": "enrollTime",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "capacity",
+            "columnName": "capacity",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "enrolled",
+            "columnName": "enrolled",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "rawKcxx",
+            "columnName": "rawKcxx",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "unparsed",
+            "columnName": "unparsed",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "syncedAt",
+            "columnName": "syncedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "rwh"
+          ]
+        }
+      },
+      {
+        "tableName": "meetings",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `rwh` TEXT NOT NULL, `xnxq` TEXT NOT NULL, `role` TEXT NOT NULL, `teachers` TEXT NOT NULL, `weeks` TEXT NOT NULL, `weekday` INTEGER NOT NULL, `startPeriod` INTEGER NOT NULL, `endPeriod` INTEGER NOT NULL, `startTime` TEXT NOT NULL, `endTime` TEXT NOT NULL, `room` TEXT, `rawText` TEXT NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "rwh",
+            "columnName": "rwh",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "xnxq",
+            "columnName": "xnxq",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "role",
+            "columnName": "role",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "teachers",
+            "columnName": "teachers",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "weeks",
+            "columnName": "weeks",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "weekday",
+            "columnName": "weekday",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "startPeriod",
+            "columnName": "startPeriod",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "endPeriod",
+            "columnName": "endPeriod",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "startTime",
+            "columnName": "startTime",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "endTime",
+            "columnName": "endTime",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "room",
+            "columnName": "room",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "rawText",
+            "columnName": "rawText",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'e03d849c9c8bf7e9986b194ab14d1c4d')"
+    ]
+  }
+}

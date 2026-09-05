@@ -2,6 +2,7 @@ package me.huanlin.gbuca.data.local
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.core.content.edit
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 
@@ -17,11 +18,14 @@ class CredentialStore(context: Context) {
     )
 
     fun save(username: String, password: String) {
-        prefs.edit().putString("username", username).putString("password", password).apply()
+        prefs.edit {
+            putString("username", username)
+            putString("password", password)
+        }
     }
 
     val username: String? get() = prefs.getString("username", null)?.takeIf { it.isNotBlank() }
     val password: String? get() = prefs.getString("password", null)
 
-    fun clear() = prefs.edit().clear().apply()
+    fun clear() = prefs.edit { clear() }
 }

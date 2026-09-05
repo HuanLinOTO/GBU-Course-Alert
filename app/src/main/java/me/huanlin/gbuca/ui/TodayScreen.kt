@@ -36,12 +36,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import me.huanlin.gbuca.R
 import me.huanlin.gbuca.domain.logic.ScheduleLogic
 import me.huanlin.gbuca.domain.logic.ScheduleLogic.ClassStatus
 import me.huanlin.gbuca.domain.model.Meeting
+import me.huanlin.gbuca.domain.parser.ScheduleParser
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -73,13 +76,14 @@ fun TodayScreen(
         topBar = {
             TopAppBar(
                 title = {
+                    val wd = weekdayName(today.dayOfWeek.value)
                     Column {
-                        Text("今日课程")
+                        Text(stringResource(R.string.today_title))
                         Text(
                             text = buildString {
                                 append(today.format(DateTimeFormatter.ofPattern("M月d日")))
                                 append(" ")
-                                append(ScheduleLogic.weekdayName(today.dayOfWeek.value))
+                                append(wd)
                                 week?.let { append(" · 第${it}周") }
                             },
                             style = MaterialTheme.typography.bodySmall,
@@ -91,7 +95,7 @@ fun TodayScreen(
                         CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp)
                         Spacer(Modifier.width(12.dp))
                     } else {
-                        TextButton(onClick = { vm.sync() }) { Text("同步") }
+                        TextButton(onClick = { vm.sync() }) { Text(stringResource(R.string.today_sync)) }
                     }
                 },
             )
@@ -104,12 +108,12 @@ fun TodayScreen(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
             ) {
                 Column(Modifier.padding(16.dp)) {
-                    Text("触发风控验证", style = MaterialTheme.typography.titleMedium)
+                    Text(stringResource(R.string.today_risk_control_title), style = MaterialTheme.typography.titleMedium)
                     Text(
-                        "连续登录失败需要验证码，请使用网页登录一次。",
+                        stringResource(R.string.today_risk_control_desc),
                         style = MaterialTheme.typography.bodySmall,
                     )
-                    TextButton(onClick = onOpenWebLogin) { Text("打开网页登录") }
+                    TextButton(onClick = onOpenWebLogin) { Text(stringResource(R.string.today_open_web_login)) }
                 }
             }
         }
@@ -123,7 +127,7 @@ fun TodayScreen(
                 item {
                     Box(Modifier.fillMaxWidth().padding(vertical = 48.dp), contentAlignment = Alignment.Center) {
                         Text(
-                            if (week == null) "未开学或学期未配置" else "今天没有课",
+                            if (week == null) stringResource(R.string.today_not_started) else stringResource(R.string.today_no_class),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -154,6 +158,7 @@ private fun StatusCard(status: ClassStatus, dayList: List<Meeting>) {
         is ClassStatus.Upcoming -> MaterialTheme.colorScheme.primary to Color.White
         else -> MaterialTheme.colorScheme.surfaceVariant to MaterialTheme.colorScheme.onSurfaceVariant
     }
+    val noRoom = stringResource(R.string.no_room)
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = bg, contentColor = fg),
@@ -162,30 +167,28 @@ private fun StatusCard(status: ClassStatus, dayList: List<Meeting>) {
         Column(Modifier.padding(20.dp)) {
             when (status) {
                 is ClassStatus.InClass -> {
-                    Text("上课中", style = MaterialTheme.typography.labelLarge)
+                    Text(stringResource(R.string.today_in_class), style = MaterialTheme.typography.labelLarge)
                     Text(
-                        "${status.endsInMinutes} 分钟后下课",
+                        stringResource(R.string.today_ends_in, status.endsInMinutes),
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold,
                     )
                 }
                 is ClassStatus.Upcoming -> {
-                    Text("下节课", style = MaterialTheme.typography.labelLarge)
+                    Text(stringResource(R.string.today_next_class), style = MaterialTheme.typography.labelLarge)
                     Text(
-                        when {
-                            status.startsInMinutes >= 60 -> "${status.startsInMinutes / 60} 小时后开始"
-                            else -> "${status.startsInMinutes} 分钟后开始"
-                        },
+                        if (status.startsInMinutes >= 60) stringResource(R.string.today_starts_in_hours, status.startsInMinutes / 60)
+                        else stringResource(R.string.today_starts_in_minutes, status.startsInMinutes),
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold,
                     )
                     Text(
-                        "${status.meeting.startTime} · ${status.meeting.room ?: "无地点"}",
+                        "${status.meeting.startTime} · ${status.meeting.room ?: noRoom}",
                         style = MaterialTheme.typography.bodyMedium,
                     )
                 }
-                is ClassStatus.Finished -> Text("今日课程已结束", style = MaterialTheme.typography.titleMedium)
-                is ClassStatus.Free -> Text("今天没有安排", style = MaterialTheme.typography.titleMedium)
+                is ClassStatus.Finished -> Text(stringResource(R.string.today_finished), style = MaterialTheme.typography.titleMedium)
+                is ClassStatus.Free -> Text(stringResource(R.string.today_free), style = MaterialTheme.typography.titleMedium)
             }
         }
     }
@@ -199,6 +202,7 @@ private fun MeetingCard(
     isNext: Boolean,
     onClick: () -> Unit,
 ) {
+    val labBadge = stringResource(R.string.badge_lab)
     Card(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
         colors = CardDefaults.cardColors(
@@ -237,14 +241,14 @@ private fun MeetingCard(
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = if (isCurrent || isNext) FontWeight.Bold else FontWeight.Medium,
                     )
-                    if (meeting.role == "课内实验") {
+                    if (meeting.role == ScheduleParser.ROLE_LAB) {
                         Spacer(Modifier.width(6.dp))
-                        RoleBadge("实验", Color(0xFF9C27B0))
+                        RoleBadge(labBadge, Color(0xFF9C27B0))
                     }
                 }
                 Text(
                     buildString {
-                        append("第${meeting.startPeriod}-${meeting.endPeriod}节")
+                        append(stringResource(R.string.today_periods, meeting.startPeriod, meeting.endPeriod))
                         meeting.room?.let { append(" · $it") }
                         if (meeting.teachers.isNotEmpty()) append(" · ${meeting.teachers.joinToString(" ")}")
                     },
@@ -259,7 +263,7 @@ private fun MeetingCard(
 }
 
 @Composable
-fun roleColor(meeting: Meeting): Color = if (meeting.role == "课内实验")
+fun roleColor(meeting: Meeting): Color = if (meeting.role == ScheduleParser.ROLE_LAB)
     Color(0xFF9C27B0) else MaterialTheme.colorScheme.primary
 
 @Composable
@@ -274,13 +278,13 @@ private fun RoleBadge(text: String, color: Color) {
 @Composable
 private fun NextBadge() {
     Box(Modifier.background(Color(0xFF1B6EF3), CircleShape).padding(horizontal = 8.dp, vertical = 2.dp)) {
-        Text("下一节", color = Color.White, style = MaterialTheme.typography.labelSmall)
+        Text(stringResource(R.string.badge_next), color = Color.White, style = MaterialTheme.typography.labelSmall)
     }
 }
 
 @Composable
 private fun NowBadge() {
     Box(Modifier.background(Color(0xFF1E8E3E), CircleShape).padding(horizontal = 8.dp, vertical = 2.dp)) {
-        Text("进行中", color = Color.White, style = MaterialTheme.typography.labelSmall)
+        Text(stringResource(R.string.badge_now), color = Color.White, style = MaterialTheme.typography.labelSmall)
     }
 }

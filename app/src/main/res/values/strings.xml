@@ -1,7 +1,140 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- 通用 -->
     <string name="app_name">GBU课表</string>
     <string name="widget_label">GBU课表·今日</string>
+    <string name="widget_description">显示今日课程与下节课高亮</string>
     <string name="channel_reminders">上课提醒</string>
     <string name="channel_live">课程实时状态（Live Update）</string>
+    <string name="no_room">无地点</string>
+
+    <!-- 登录页 -->
+    <string name="login_hello">泥吼！</string>
+    <string name="login_hello_gbu">湾大人</string>
+    <string name="login_subtitle">登录 iAAA，同步你的湾大课表</string>
+    <string name="login_student_id">学号</string>
+    <string name="login_password">密码</string>
+    <string name="login_fullwidth_hint">检测到全角字符（如 ！＃＠）。若登录失败，请改用半角符号重新输入</string>
+    <string name="login_button">登录</string>
+    <string name="login_button_in_progress">登录中…</string>
+    <string name="login_open_web">触发验证码？使用网页登录</string>
+
+    <!-- 今日页 -->
+    <string name="today_title">今日课程</string>
+    <string name="today_sync">同步</string>
+    <string name="today_risk_control_title">触发风控验证</string>
+    <string name="today_risk_control_desc">连续登录失败需要验证码，请使用网页登录一次。</string>
+    <string name="today_open_web_login">打开网页登录</string>
+    <string name="today_not_started">未开学或学期未配置</string>
+    <string name="today_no_class">今天没有课</string>
+    <string name="today_in_class">上课中</string>
+    <string name="today_ends_in">%1$d 分钟后下课</string>
+    <string name="today_next_class">下节课</string>
+    <string name="today_starts_in_hours">%1$d 小时后开始</string>
+    <string name="today_starts_in_minutes">%1$d 分钟后开始</string>
+    <string name="today_finished">今日课程已结束</string>
+    <string name="today_free">今天没有安排</string>
+    <string name="today_periods">第%1$d-%2$d节</string>
+    <string name="badge_next">下一节</string>
+    <string name="badge_now">进行中</string>
+    <string name="badge_lab">实验</string>
+
+    <!-- 周课表 -->
+    <string name="week_title">第 %1$d 周</string>
+    <string name="week_prev">‹ 上一周</string>
+    <string name="week_this">本周</string>
+    <string name="week_next">下一周 ›</string>
+    <string name="tab_today">今日</string>
+    <string name="tab_week">课表</string>
+    <string name="tab_settings">设置</string>
+
+    <!-- 课程详情 -->
+    <string name="detail_title_fallback">课程详情</string>
+    <string name="detail_not_found">未找到课程</string>
+    <string name="detail_schedule_title">上课时间</string>
+    <string name="detail_role_main">主讲</string>
+    <string name="detail_unparsed">未能解析的原文</string>
+    <string name="detail_label_code">课程代码</string>
+    <string name="detail_label_seq">课序号</string>
+    <string name="detail_label_class">班级</string>
+    <string name="detail_label_nature">课程性质</string>
+    <string name="detail_label_category">课程类别</string>
+    <string name="detail_label_college">开课学院</string>
+    <string name="detail_label_credits">学分</string>
+    <string name="detail_label_hours">学时</string>
+    <string name="detail_label_enroll_time">选课时间</string>
+    <string name="detail_label_capacity">容量/已选</string>
+
+    <!-- 设置 -->
+    <string name="settings_title">设置</string>
+    <string name="settings_section_account">账号</string>
+    <string name="settings_password_keep">密码（留空保持不变）</string>
+    <string name="settings_save_and_sync">保存并同步</string>
+    <string name="settings_syncing">同步中…</string>
+    <string name="settings_sync_only">仅同步</string>
+    <string name="settings_section_reminder">上课提醒</string>
+    <string name="settings_enable_reminders">启用提醒</string>
+    <string name="settings_reminder_minutes_label">提前提醒时间</string>
+    <string name="settings_reminder_minutes_chip">%1$d分钟</string>
+    <string name="settings_exact_alarm_missing">未授予精确闹钟权限，提醒可能延迟</string>
+    <string name="settings_grant_exact_alarm">授予精确闹钟权限</string>
+    <string name="settings_notif_missing">未授予通知权限</string>
+    <string name="settings_grant_notif">授予通知权限</string>
+    <string name="settings_battery_whitelist">电池优化白名单（可选）</string>
+    <string name="settings_section_live">实时通知 (Live Update)</string>
+    <string name="settings_live_desc">开课前按「提前提醒时间」显示候课倒计时，上课期间常驻显示课程进度，每分钟刷新（Android 16+ 效果最佳）。\nColorOS 用户：应用详情 → 通知管理 → 流体云，允许显示</string>
+    <string name="settings_live_test">测试完整流程（12倍速）</string>
+    <string name="settings_live_stop">停止</string>
+    <string name="settings_section_term">学期配置</string>
+    <string name="settings_term_start_label">学期第一周周一 (YYYY-MM-DD)</string>
+    <string name="settings_calibrate">从教务系统校准</string>
+    <string name="settings_calibrating">校准中…</string>
+    <string name="settings_save">保存</string>
+    <string name="settings_term_hint">「第 X 周」依据学期第一周周一计算。通常已在同步时从教务系统自动校准，如与实际不符可手动修改。</string>
+    <string name="settings_section_about">关于</string>
+    <string name="settings_about">GBU 课表 · 数据仅存本机（凭据经 Keystore 加密），不同步任何服务器。\n半角数字之学号 + 明文密码经 HTTPS 直连学校 iAAA 认证。</string>
+    <string name="settings_last_sync">上次同步：%1$s</string>
+
+    <!-- 同步 / 错误消息（ViewModel） -->
+    <string name="msg_synced_courses">已同步 %1$d 门课程</string>
+    <string name="msg_calibrate_success">校准成功：第 1 周周一 = %1$s</string>
+    <string name="msg_calibrate_unavailable">无法校准：教务系统未返回该学期的周次信息</string>
+    <string name="error_login_failed">登录失败：%1$s</string>
+    <string name="error_need_captcha">需要验证码，请使用网页登录</string>
+    <string name="error_need_sms">需要短信验证码，请使用网页登录</string>
+    <string name="error_session_expired">会话已过期，请重新同步</string>
+    <string name="error_network">网络错误，请检查连接</string>
+    <string name="error_sync_failed">同步失败：%1$s</string>
+
+    <!-- 提醒通知 -->
+    <string name="notif_class_title">即将上课 · %1$s</string>
+    <string name="notif_class_text">%1$s · %2$s</string>
+
+    <!-- Live Update 通知 -->
+    <string name="notif_live_in_class_title">上课中 · %1$s</string>
+    <string name="notif_live_wait_title">即将上课 · %1$s</string>
+    <string name="notif_live_in_class_text">至 %1$s · 已进行 %2$d%%</string>
+    <string name="notif_live_in_class_text_room">至 %1$s · %2$s · 已进行 %3$d%%</string>
+    <string name="notif_live_wait_text">%1$s 开课 · %2$d分钟后开始</string>
+    <string name="notif_live_wait_text_room">%1$s 开课 · %2$s · %3$d分钟后开始</string>
+    <string name="notif_live_short_remain">剩%1$d分</string>
+    <string name="notif_live_short_until">%1$d分后</string>
+    <string name="notif_live_action_open">打开课表</string>
+
+    <!-- 桌面小组件 -->
+    <string name="widget_week_day">第%1$d周 · %2$s</string>
+    <string name="widget_course_count">%1$d 节课</string>
+    <string name="widget_empty">今天没有课 🎉</string>
+    <string name="widget_more">还有 %1$d 节…</string>
+
+    <!-- 星期（index = dayOfWeek-1） -->
+    <string-array name="weekdays">
+        <item>周一</item>
+        <item>周二</item>
+        <item>周三</item>
+        <item>周四</item>
+        <item>周五</item>
+        <item>周六</item>
+        <item>周日</item>
+    </string-array>
 </resources>

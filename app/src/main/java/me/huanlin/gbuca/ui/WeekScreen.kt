@@ -33,10 +33,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import me.huanlin.gbuca.R
 import me.huanlin.gbuca.domain.logic.ScheduleLogic
 import me.huanlin.gbuca.domain.model.Meeting
 import me.huanlin.gbuca.domain.time.TimeGrid
@@ -64,14 +66,14 @@ fun WeekScreen(onOpenCourse: (String) -> Unit, vm: AppViewModel) {
 
     Column(Modifier.fillMaxSize()) {
         TopAppBar(
-            title = { Text("第 $week 周") },
+            title = { Text(stringResource(R.string.week_title, week)) },
             actions = {
-                androidx.compose.material3.TextButton(onClick = { if (week > 1) week-- }) { Text("‹ 上一周") }
+                androidx.compose.material3.TextButton(onClick = { if (week > 1) week-- }) { Text(stringResource(R.string.week_prev)) }
                 val cw = currentWeek(vm.semesterStartMonday)
                 if (cw != null) {
-                    androidx.compose.material3.TextButton(onClick = { week = cw }) { Text("本周") }
+                    androidx.compose.material3.TextButton(onClick = { week = cw }) { Text(stringResource(R.string.week_this)) }
                 }
-                androidx.compose.material3.TextButton(onClick = { if (week < 30) week++ }) { Text("下一周 ›") }
+                androidx.compose.material3.TextButton(onClick = { if (week < 30) week++ }) { Text(stringResource(R.string.week_next)) }
             },
         )
         WeekGrid(
@@ -111,7 +113,7 @@ private fun WeekGrid(
             (1..7).forEach { wd ->
                 val isToday = isCurrentWeek && wd == today.dayOfWeek.value
                 Text(
-                    ScheduleLogic.weekdayName(wd),
+                    weekdayName(wd),
                     modifier = Modifier.weight(1f).padding(vertical = 6.dp),
                     style = MaterialTheme.typography.labelMedium,
                     textAlign = TextAlign.Center,

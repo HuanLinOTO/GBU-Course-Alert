@@ -34,7 +34,6 @@ class GbuCaApp : Application() {
         cookieJar = PersistentCookieJar(File(filesDir, "cookies.json"))
         client = GbuClient(cookieJar)
         db = Room.databaseBuilder(this, AppDatabase::class.java, "gbuca.db")
-            .fallbackToDestructiveMigration()
             .build()
         creds = CredentialStore(this)
         settings = SettingsStore(this)
