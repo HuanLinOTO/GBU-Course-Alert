@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">GBU课表</string>
+    <string name="widget_label">GBU课表·今日</string>
+    <string name="channel_reminders">上课提醒</string>
+    <string name="channel_live">课程实时状态（Live Update）</string>
+</resources>
