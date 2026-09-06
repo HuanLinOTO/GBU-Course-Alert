@@ -103,6 +103,8 @@ private fun WeekGrid(
         meetings.filter { it.weekday == wd && week in it.weeks && it.startPeriod in 1..n }
             .sortedWith(compareBy({ it.startPeriod }, { it.endPeriod }))
     }
+    // 周末没课时不显示对应列
+    val visibleDays = (1..7).filter { it <= 5 || dayMeetings[it].orEmpty().isNotEmpty() }
     val today = LocalDate.now()
     val isCurrentWeek = ScheduleLogic.weekOf(today, semesterStartMonday) == week
 
@@ -110,7 +112,7 @@ private fun WeekGrid(
         // 表头：星期（与下方日列等宽对齐）
         Row(Modifier.fillMaxWidth()) {
             Spacer(Modifier.width(timeColWidth))
-            (1..7).forEach { wd ->
+            visibleDays.forEach { wd ->
                 val isToday = isCurrentWeek && wd == today.dayOfWeek.value
                 Text(
                     weekdayName(wd),
@@ -153,8 +155,8 @@ private fun WeekGrid(
                             }
                         }
                     }
-                    // 7 个日列，平分剩余宽度
-                    (1..7).forEach { wd ->
+                    // 日列，平分剩余宽度（周末无课时隐藏）
+                    visibleDays.forEach { wd ->
                         DayColumn(
                             meetings = dayMeetings[wd].orEmpty(),
                             isToday = isCurrentWeek && wd == today.dayOfWeek.value,
