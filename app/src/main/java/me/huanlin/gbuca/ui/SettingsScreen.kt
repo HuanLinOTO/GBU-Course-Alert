@@ -9,6 +9,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,10 +21,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -90,187 +91,213 @@ fun SettingsScreen(
 
         // ---- 账号 ----
         SectionTitle(stringResource(R.string.settings_section_account))
-        OutlinedTextField(
-            value = username,
-            onValueChange = { username = it },
-            label = { Text(stringResource(R.string.login_student_id)) },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-        )
-        OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text(if (username.isBlank()) stringResource(R.string.login_password) else stringResource(R.string.settings_password_keep)) },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            visualTransformation = PasswordVisualTransformation(),
-            supportingText = {
-                if (password.any { it in '\uFF01'..'\uFF5E' || it == '\u3000' }) {
-                    Text(
-                        stringResource(R.string.login_fullwidth_hint),
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                }
-            },
-        )
-        Row {
-            Button(onClick = {
-                if (username.isNotBlank()) {
-                    vm.saveCredentials(username, password.ifBlank {
-                        GbuCaApp.instance.creds.password ?: ""
-                    })
-                    savedTick++
-                    vm.sync()
-                }
-            }, enabled = !ui.syncing) {
-                if (ui.syncing) {
-                    CircularProgressIndicator(
-                        Modifier.size(16.dp), strokeWidth = 2.dp,
-                        color = MaterialTheme.colorScheme.onPrimary,
-                    )
-                    Spacer(Modifier.width(8.dp))
-                }
-                Text(if (ui.syncing) stringResource(R.string.settings_syncing) else stringResource(R.string.settings_save_and_sync))
-            }
-            Spacer(Modifier.width(12.dp))
-            OutlinedButton(onClick = { vm.sync() }, enabled = !ui.syncing) {
-                Text(stringResource(R.string.settings_sync_only))
-            }
-        }
-        ui.message?.let {
-            Text(
-                it,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.padding(top = 4.dp),
+        SettingsCard {
+            OutlinedTextField(
+                value = username,
+                onValueChange = { username = it },
+                label = { Text(stringResource(R.string.login_student_id)) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
             )
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text(if (username.isBlank()) stringResource(R.string.login_password) else stringResource(R.string.settings_password_keep)) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation(),
+                supportingText = {
+                    if (password.any { it in '\uFF01'..'\uFF5E' || it == '\u3000' }) {
+                        Text(
+                            stringResource(R.string.login_fullwidth_hint),
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
+                },
+            )
+            Row {
+                Button(onClick = {
+                    if (username.isNotBlank()) {
+                        vm.saveCredentials(username, password.ifBlank {
+                            GbuCaApp.instance.creds.password ?: ""
+                        })
+                        savedTick++
+                        vm.sync()
+                    }
+                }, enabled = !ui.syncing) {
+                    if (ui.syncing) {
+                        CircularProgressIndicator(
+                            Modifier.size(16.dp), strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.onPrimary,
+                        )
+                        Spacer(Modifier.width(8.dp))
+                    }
+                    Text(if (ui.syncing) stringResource(R.string.settings_syncing) else stringResource(R.string.settings_save_and_sync))
+                }
+                Spacer(Modifier.width(12.dp))
+                OutlinedButton(onClick = { vm.sync() }, enabled = !ui.syncing) {
+                    Text(stringResource(R.string.settings_sync_only))
+                }
+            }
+            ui.message?.let {
+                Text(
+                    it,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
         }
 
         // ---- 提醒 ----
         SectionTitle(stringResource(R.string.settings_section_reminder))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(stringResource(R.string.settings_enable_reminders), Modifier.weight(1f))
-            Switch(
-                checked = remindersEnabled,
-                onCheckedChange = { on -> vm.setRemindersEnabled(on) },
-            )
-        }
-        Text(stringResource(R.string.settings_reminder_minutes_label), style = MaterialTheme.typography.bodyMedium)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            listOf(5, 10, 15, 20, 30).forEach { min ->
-                FilterChip(
-                    selected = reminderMinutes == min,
-                    onClick = { vm.setReminderMinutes(min) },
-                    label = { Text(stringResource(R.string.settings_reminder_minutes_chip, min)) },
+        SettingsCard {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.settings_enable_reminders), Modifier.weight(1f))
+                Switch(
+                    checked = remindersEnabled,
+                    onCheckedChange = { on -> vm.setRemindersEnabled(on) },
                 )
             }
-        }
-        if (!reminderScheduler.canScheduleExact()) {
-            Text(
-                stringResource(R.string.settings_exact_alarm_missing),
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodySmall,
-            )
-            OutlinedButton(onClick = { reminderScheduler.requestExactPermission() }) {
-                Text(stringResource(R.string.settings_grant_exact_alarm))
+            Column {
+                Text(stringResource(R.string.settings_reminder_minutes_label), style = MaterialTheme.typography.bodyMedium)
+                Spacer(Modifier.height(8.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(5, 10, 15, 20, 30).forEach { min ->
+                        FilterChip(
+                            selected = reminderMinutes == min,
+                            onClick = { vm.setReminderMinutes(min) },
+                            label = { Text(stringResource(R.string.settings_reminder_minutes_chip, min)) },
+                        )
+                    }
+                }
             }
-        }
-        if (!notifGranted && Build.VERSION.SDK_INT >= 33) {
-            Text(
-                stringResource(R.string.settings_notif_missing),
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodySmall,
-            )
-            OutlinedButton(onClick = { notifLauncher.launch(Manifest.permission.POST_NOTIFICATIONS) }) {
-                Text(stringResource(R.string.settings_grant_notif))
+            if (!reminderScheduler.canScheduleExact()) {
+                Column {
+                    Text(
+                        stringResource(R.string.settings_exact_alarm_missing),
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedButton(onClick = { reminderScheduler.requestExactPermission() }) {
+                        Text(stringResource(R.string.settings_grant_exact_alarm))
+                    }
+                }
             }
+            if (!notifGranted && Build.VERSION.SDK_INT >= 33) {
+                Column {
+                    Text(
+                        stringResource(R.string.settings_notif_missing),
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedButton(onClick = { notifLauncher.launch(Manifest.permission.POST_NOTIFICATIONS) }) {
+                        Text(stringResource(R.string.settings_grant_notif))
+                    }
+                }
+            }
+            OutlinedButton(onClick = {
+                context.startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
+            }) { Text(stringResource(R.string.settings_battery_whitelist)) }
         }
-        OutlinedButton(onClick = {
-            context.startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
-        }) { Text(stringResource(R.string.settings_battery_whitelist)) }
 
         // ---- Live Update ----
         SectionTitle(stringResource(R.string.settings_section_live))
-        Text(
-            stringResource(R.string.settings_live_desc),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedButton(onClick = { LiveUpdateNotifier.showTest(context) }) {
-                Text(stringResource(R.string.settings_live_test))
-            }
-            OutlinedButton(onClick = { LiveUpdateNotifier.cancel(context) }) {
-                Text(stringResource(R.string.settings_live_stop))
+        SettingsCard {
+            Text(
+                stringResource(R.string.settings_live_desc),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(onClick = { LiveUpdateNotifier.showTest(context) }) {
+                    Text(stringResource(R.string.settings_live_test))
+                }
+                OutlinedButton(onClick = { LiveUpdateNotifier.cancel(context) }) {
+                    Text(stringResource(R.string.settings_live_stop))
+                }
             }
         }
-
-        HorizontalDivider(Modifier.padding(vertical = 8.dp))
 
         // ---- 学期配置 ----
         SectionTitle(stringResource(R.string.settings_section_term))
-        SemesterStartDatePicker(
-            current = vm.semesterStartMonday,
-            calibrating = ui.syncing,
-            onCalibrate = { vm.calibrateSemesterStartFromServer() },
-            onConfirm = { vm.setSemesterStartMonday(it) },
-        )
-        ui.message?.let {
+        SettingsCard {
+            SemesterStartDatePicker(
+                current = vm.semesterStartMonday,
+                calibrating = ui.syncing,
+                onCalibrate = { vm.calibrateSemesterStartFromServer() },
+                onConfirm = { vm.setSemesterStartMonday(it) },
+            )
+            ui.message?.let {
+                Text(
+                    it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (ui.calibrateOk == true) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                )
+            }
             Text(
-                it,
+                stringResource(R.string.settings_term_hint),
                 style = MaterialTheme.typography.bodySmall,
-                color = if (ui.calibrateOk == true) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        Text(
-            stringResource(R.string.settings_term_hint),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-
-        HorizontalDivider(Modifier.padding(vertical = 8.dp))
 
         // ---- 关于 ----
         SectionTitle(stringResource(R.string.settings_section_about))
-        Text(
-            stringResource(R.string.settings_about_version, BuildConfig.VERSION_NAME),
-            style = MaterialTheme.typography.bodyMedium,
-        )
         val uriHandler = LocalUriHandler.current
         val repoUrl = stringResource(R.string.settings_about_repo_url)
-        Text(
-            stringResource(R.string.settings_about_school),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(
-            stringResource(R.string.settings_about_repo),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.clickable { uriHandler.openUri(repoUrl) },
-        )
-        Text(
-            stringResource(R.string.settings_about_copyright),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(
-            stringResource(R.string.settings_about),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        val lastSync = vm.settings.lastSyncAt
-        if (lastSync > 0) {
+        SettingsCard {
             Text(
-                stringResource(
-                    R.string.settings_last_sync,
-                    java.time.Instant.ofEpochMilli(lastSync).atZone(java.time.ZoneId.systemDefault())
-                        .format(DateTimeFormatter.ofPattern("MM-dd HH:mm")),
-                ),
-                style = MaterialTheme.typography.bodySmall,
+                stringResource(R.string.settings_about_version, BuildConfig.VERSION_NAME),
+                style = MaterialTheme.typography.bodyMedium,
             )
+            Text(
+                stringResource(R.string.settings_about_school),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                stringResource(R.string.settings_about_repo),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.clickable { uriHandler.openUri(repoUrl) },
+            )
+            Text(
+                stringResource(R.string.settings_about_copyright),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                stringResource(R.string.settings_about),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            val lastSync = vm.settings.lastSyncAt
+            if (lastSync > 0) {
+                Text(
+                    stringResource(
+                        R.string.settings_last_sync,
+                        java.time.Instant.ofEpochMilli(lastSync).atZone(java.time.ZoneId.systemDefault())
+                            .format(DateTimeFormatter.ofPattern("MM-dd HH:mm")),
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
         }
         Spacer(Modifier.height(24.dp))
+    }
+}
+
+/** 分组卡片：包裹同类设置项的原生 M3 卡片。 */
+@Composable
+private fun SettingsCard(content: @Composable ColumnScope.() -> Unit) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            Modifier.fillMaxWidth().padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            content = content,
+        )
     }
 }
 

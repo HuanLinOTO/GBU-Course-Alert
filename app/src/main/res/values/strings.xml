@@ -27,6 +27,9 @@
     <string name="today_open_web_login">打开网页登录</string>
     <string name="today_not_started">未开学或学期未配置</string>
     <string name="today_no_class">今天没有课</string>
+    <string name="today_no_class_day">这一天没有课</string>
+    <string name="today_label_today">今天</string>
+    <string name="today_back_to_today">回到今天</string>
     <string name="today_in_class">上课中</string>
     <string name="today_ends_in">%1$d 分钟后下课</string>
     <string name="today_next_class">下节课</string>
