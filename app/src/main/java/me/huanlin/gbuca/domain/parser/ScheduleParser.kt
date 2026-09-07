@@ -1,6 +1,7 @@
 package me.huanlin.gbuca.domain.parser
 
 import me.huanlin.gbuca.domain.model.Meeting
+import me.huanlin.gbuca.domain.time.TimeGrid
 import java.time.LocalTime
 
 /**
@@ -28,9 +29,11 @@ object ScheduleParser {
 
     private val WHITESPACE = Regex("""\s+""")
 
-    /** `1-16周,星期三第1-2节 8:00-9:15 B304`（周次 token 可带 单/双 后缀） */
+    /** `1-16周,星期三第1-2节 8:00-9:15 B304`（周次 token 可带 单/双 后缀）。
+     *  时间段可整体省略（如 2026-2027-1 部分任务的 kcxx：`1-16周,星期三第9-10节 B305`），
+     *  省略时按节次查 [TimeGrid] 作息网格。 */
     private val MEETING_LINE = Regex(
-        """^(.+?)周[,，]星期([一二三四五六日天])第(\d+)(?:-(\d+))?节\s*(\d{1,2}:\d{1,2})-(\d{1,2}:\d{1,2})(?:\s+(.+))?$"""
+        """^(.+?)周[,，]星期([一二三四五六日天])第(\d+)(?:-(\d+))?节(?:\s*(\d{1,2}:\d{1,2})-(\d{1,2}:\d{1,2}))?(?:\s+(.+))?$"""
     )
 
     /** 角色标签行，如 `主任务: 段金桥`。排除含逗号的行以免误吞课次行。 */
@@ -61,8 +64,11 @@ object ScheduleParser {
                 val weekday = WEEKDAY[m.groupValues[2][0]]
                 val startPeriod = m.groupValues[3].toIntOrNull()
                 val endPeriod = (if (m.groupValues[4].isEmpty()) m.groupValues[3] else m.groupValues[4]).toIntOrNull()
+                // 显式时间永远优先；kcxx 未给时间时按节次查作息网格（同步时已由 kbjclist 覆盖）
                 val startTime = parseTime(m.groupValues[5])
+                    ?: startPeriod?.let { TimeGrid.period(it)?.start }
                 val endTime = parseTime(m.groupValues[6])
+                    ?: endPeriod?.let { TimeGrid.period(it)?.end }
                 val roomRaw = m.groupValues[7].trim()
                 val room = if (roomRaw.isEmpty() || roomRaw == "无地点") null else roomRaw
 

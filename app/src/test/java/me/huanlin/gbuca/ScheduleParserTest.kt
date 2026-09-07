@@ -65,6 +65,9 @@ class ScheduleParserTest {
 
     private val ipc101 = "<a>单磊</a><p><b>上课信息:</b><p>1-16周,星期四第1-3节 8:00-9:55 B306"
 
+    /** 真实 kcxx（2026-2027-1，MATH101-002A）：上课信息行不带时间段，且整段包在 ivu-tag div/span 中 */
+    private val mathRealNoTime = """<p><b>主任务:</b><p> <a href="javascript:void(0);"  onclick="javascript:queryJsxx('236162078')" >陈国廷</a> </p><p><b style='font-weight:bold'>上课信息:</b><div style='height: auto;' class="ivu-tag ivu-tag-size-default ivu-tag-cyan ivu-tag-checked"><span class="ivu-tag-text"><p>1-16周,星期三第9-10节 B305</p><p>1-16周,星期五第3-4节 B305</p></span></div></p><div style='height: auto;' class="ivu-tag ivu-tag-size-default ivu-tag-green ivu-tag-checked"> <span class="ivu-tag-text"><p></span></div></p></p><p><b>课内实验:</b><p> <a href="javascript:void(0);"  onclick="javascript:queryJsxx('236193038')" >王福东</a> </p><p><b style='font-weight:bold'>上课信息:</b><div style='height: auto;' class="ivu-tag ivu-tag-size-default ivu-tag-cyan ivu-tag-checked"><span class="ivu-tag-text"><p>1-16周,星期一第15-16节 B303</p></span></div></p><div style='height: auto;' class="ivu-tag ivu-tag-size-default ivu-tag-green ivu-tag-checked"> <span class="ivu-tag-text"><p></span></div></p></p>"""
+
     @Test
     fun `math101 parses 3 meetings with roles and teachers`() {
         val r = ScheduleParser.parse(math101, "M1")
@@ -86,6 +89,42 @@ class ScheduleParserTest {
         assertEquals(LocalTime.of(9, 15), wed.endTime)
         assertEquals("B304", wed.room)
         assertEquals((1..16).toSet(), wed.weeks)
+    }
+
+    @Test
+    fun `mathRealNoTime lines derive times from grid`() {
+        TimeGrid.reset()
+        val r = ScheduleParser.parse(mathRealNoTime, "M2")
+        assertEquals(3, r.meetings.size)
+        assertTrue(r.unparsedLines.isEmpty())
+
+        val main = r.meetings.filter { it.role == ScheduleParser.ROLE_MAIN }
+        val lab = r.meetings.filter { it.role == ScheduleParser.ROLE_LAB }
+        assertEquals(2, main.size)
+        assertEquals(1, lab.size)
+        assertEquals(listOf("陈国廷"), main[0].teachers)
+        assertEquals(listOf("王福东"), lab[0].teachers)
+
+        val wed = main.first { it.weekday == 3 }
+        assertEquals(9, wed.startPeriod)
+        assertEquals(10, wed.endPeriod)
+        assertEquals(LocalTime.of(14, 0), wed.startTime)   // 第9节起始
+        assertEquals(LocalTime.of(15, 15), wed.endTime)    // 第10节结束
+        assertEquals("B305", wed.room)
+        assertEquals((1..16).toSet(), wed.weeks)
+
+        val fri = main.first { it.weekday == 5 }
+        assertEquals(3, fri.startPeriod)
+        assertEquals(4, fri.endPeriod)
+        assertEquals(LocalTime.of(9, 30), fri.startTime)
+        assertEquals(LocalTime.of(10, 45), fri.endTime)
+
+        assertEquals(1, lab[0].weekday)
+        assertEquals(15, lab[0].startPeriod)
+        assertEquals(16, lab[0].endPeriod)
+        assertEquals(LocalTime.of(18, 30), lab[0].startTime)
+        assertEquals(LocalTime.of(19, 45), lab[0].endTime)
+        assertEquals("B303", lab[0].room)
     }
 
     @Test
