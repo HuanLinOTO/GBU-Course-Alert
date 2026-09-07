@@ -129,20 +129,22 @@ class AppViewModel : ViewModel() {
         app.reminderScheduler.rescheduleAsync()
     }
 
-    /** 手动从教务系统校准「第 1 周周一」（清除手动设置并强制生效）。 */
+    /** 手动从教务系统校准「第 1 周周一」（清除手动设置并强制生效；无会话先自动登录）。 */
     fun calibrateSemesterStartFromServer() {
         viewModelScope.launch {
             ui.value = ui.value.copy(syncing = true, message = null, calibrateOk = null)
             val result = runCatching { repo.calibrateSemesterStart(xnxq, force = true) }
             val date = result.getOrNull()
+            val e = result.exceptionOrNull()
             ui.value = ui.value.copy(
                 syncing = false,
                 message = when {
                     date != null -> app.getString(R.string.msg_calibrate_success, date)
-                    result.isFailure -> friendlyError(result.exceptionOrNull())
+                    e != null -> friendlyError(e)
                     else -> app.getString(R.string.msg_calibrate_unavailable)
                 },
                 calibrateOk = if (date != null) true else false,
+                needWebLogin = e is GbuException.NeedCaptcha || e is GbuException.NeedSms,
             )
             if (date != null) {
                 app.reminderScheduler.rescheduleAsync()

@@ -2,6 +2,7 @@ package me.huanlin.gbuca.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -239,9 +240,15 @@ private fun DayPager(
 
 @Composable
 private fun StatusCard(status: ClassStatus, dayList: List<Meeting>) {
+    // 深色模式下 primary/饱和绿都是高亮度色，整卡铺底会刺眼：改用暗容器底 + 浅色字
+    val dark = isSystemInDarkTheme()
     val (bg, fg) = when (status) {
-        is ClassStatus.InClass -> Color(0xFF1E8E3E) to Color.White
-        is ClassStatus.Upcoming -> MaterialTheme.colorScheme.primary to Color.White
+        is ClassStatus.InClass ->
+            if (dark) Color(0xFF14361F) to Color(0xFFA5D6A7)
+            else Color(0xFF1E8E3E) to Color.White
+        is ClassStatus.Upcoming ->
+            if (dark) MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer
+            else MaterialTheme.colorScheme.primary to Color.White
         else -> MaterialTheme.colorScheme.surfaceVariant to MaterialTheme.colorScheme.onSurfaceVariant
     }
     val noRoom = stringResource(R.string.no_room)

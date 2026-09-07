@@ -22,7 +22,8 @@ import java.time.ZoneId
 
 /**
  * Android 16 Live Updates：上课期间的常驻进度通知（ProgressStyle）。
- * 每分钟由 AlarmReceiver 触发一次刷新，下课自动清除。
+ * tick 链刷新进度；通知自带系统超时（timeoutAfter）——到下课时刻由系统直接移除，
+ * 即使闹钟被 Doze 限流或用户未授予精确闹钟权限，倒计时也不会走到负数。
  */
 class LiveUpdateNotifier {
 
@@ -55,6 +56,9 @@ class LiveUpdateNotifier {
 
         /** 课长超过该值才显示绿色冲刺段 + 里程碑，避免短课拥挤。 */
         private const val MILESTONE_MIN_TOTAL_MS = 20 * 60_000L
+
+        /** 候课阶段 tick 被系统延迟时的兜底宽限：开课（虚拟）+2 分钟后由系统移除候课通知。 */
+        private const val WAIT_OVERDUE_GRACE_MS = 2 * 60_000L
 
         /** 进程内只做一次通道检查；tick 高频调用时必须是 no-op，否则删通道会导致通知销毁重建。 */
         private var channelReady = false
@@ -125,7 +129,7 @@ class LiveUpdateNotifier {
             }
         }
 
-        /** 每分钟（虚拟时间）tick：刷新进度并续排下一次；到虚拟下课时刻则清除。 */
+        /** 每 15 秒（虚拟时间）tick：刷新进度并续排下一次；下一次对齐到最近的阶段边界（开课/下课），边界处准点切换或清除。 */
         fun onTick(
             context: Context,
             name: String,
@@ -136,13 +140,18 @@ class LiveUpdateNotifier {
             scale: Int,
             waitStartMs: Long,
         ) {
-            val now = anchorMs + (System.currentTimeMillis() - anchorMs) * scale
+            val realNow = System.currentTimeMillis()
+            val now = anchorMs + (realNow - anchorMs) * scale
             if (now >= endMs) {
                 cancel(context)
                 return
             }
             post(context, name, room, startMs, endMs, anchorMs, scale, waitStartMs)
-            scheduleTick(context, name, room, startMs, endMs, System.currentTimeMillis() + tickIntervalMs(scale), anchorMs, scale, waitStartMs)
+            // 下一个阶段边界（开课→切进度条、下课→清除）换算为真实时刻，与常规步进取近者：
+            // 边界切换至多迟一个闹钟派发延迟，而不是一整个步进（15 秒）
+            val boundary = if (now < startMs) startMs else endMs
+            val stepMs = minOf(tickIntervalMs(scale), ((boundary - now) / scale).coerceAtLeast(1L))
+            scheduleTick(context, name, room, startMs, endMs, realNow + stepMs, anchorMs, scale, waitStartMs)
         }
 
         private fun post(
@@ -167,6 +176,11 @@ class LiveUpdateNotifier {
             val inClass = now >= startMs
             val elapsed = if (inClass) (now - startMs).coerceIn(0L, total) else 0L
             val pct = (elapsed * 100 / total).toInt()
+
+            // 系统级到期移除：上课阶段到下课时刻、候课阶段到开课+宽限（均为虚拟时间，除以倍率得真实毫秒）。
+            // 由 NotificationManager 强制清除，不依赖 app 闹钟 —— 即使 tick 被 Doze 限流，倒计时也不会出现负数。
+            val dueAtMs = if (inClass) endMs else startMs + WAIT_OVERDUE_GRACE_MS
+            val timeoutMs = ((dueAtMs - now) / scale).coerceAtLeast(1L)
 
             val style = NotificationCompat.ProgressStyle()
                 .setProgressTrackerIcon(IconCompat.createWithResource(context, R.drawable.ic_stat_class))
@@ -241,6 +255,7 @@ class LiveUpdateNotifier {
                 .setOnlyAlertOnce(true)
                 .setCategory(NotificationCompat.CATEGORY_PROGRESS)
                 .setRequestPromotedOngoing(true)
+                .setTimeoutAfter(timeoutMs)
             if (scale == 1) {
                 // 系统驱动的平滑倒计时：状态栏 chip 与通知头部每秒自动跳动，不依赖 re-post
                 builder.setWhen(if (inClass) endMs else startMs)
@@ -273,10 +288,16 @@ class LiveUpdateNotifier {
             waitStartMs: Long,
         ) {
             val am = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            val pi = tickPending(context, name, room, startMs, endMs, anchorMs, scale, waitStartMs, true)
+            // Android 14+ 精确闹钟默认未授权：先查 canScheduleExactAlarms，避免每个 tick 都抛 SecurityException
             try {
-                am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, atMillis, tickPending(context, name, room, startMs, endMs, anchorMs, scale, waitStartMs, true))
+                if (Build.VERSION.SDK_INT < 31 || am.canScheduleExactAlarms()) {
+                    am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, atMillis, pi)
+                } else {
+                    am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, atMillis, pi)
+                }
             } catch (_: SecurityException) {
-                am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, atMillis, tickPending(context, name, room, startMs, endMs, anchorMs, scale, waitStartMs, true))
+                am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, atMillis, pi)
             }
         }
 

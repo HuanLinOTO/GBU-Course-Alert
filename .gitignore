@@ -9,3 +9,5 @@ captures/
 .playwright-mcp/
 keystore.properties
 *.jks
+.codegraph/
+dist/

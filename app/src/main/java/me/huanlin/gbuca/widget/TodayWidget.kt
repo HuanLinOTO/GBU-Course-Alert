@@ -111,12 +111,12 @@ private fun WidgetContent(state: WidgetState) {
                 } else {
                     weekdayLabel(context, state.date)
                 },
-                style = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.Bold),
+                style = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.Bold, color = GlanceTheme.colors.onSurface),
             )
             Spacer(GlanceModifier.defaultWeight())
             Text(
                 text = context.getString(R.string.widget_course_count, state.items.size),
-                style = TextStyle(fontSize = 12.sp),
+                style = TextStyle(fontSize = 12.sp, color = GlanceTheme.colors.onSurfaceVariant),
             )
         }
         if (state.items.isEmpty()) {
@@ -124,7 +124,7 @@ private fun WidgetContent(state: WidgetState) {
                 modifier = GlanceModifier.fillMaxSize().padding(bottom = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(context.getString(R.string.widget_empty), style = TextStyle(fontSize = 14.sp))
+                Text(context.getString(R.string.widget_empty), style = TextStyle(fontSize = 14.sp, color = GlanceTheme.colors.onSurfaceVariant))
             }
         } else {
             Column(modifier = GlanceModifier.fillMaxSize().padding(horizontal = 10.dp)) {
@@ -153,6 +153,7 @@ private fun WidgetContent(state: WidgetState) {
                             style = TextStyle(
                                 fontSize = 12.sp,
                                 fontWeight = if (item.isNext || item.inProgress) FontWeight.Bold else FontWeight.Normal,
+                                color = GlanceTheme.colors.onSurface,
                             ),
                         )
                     }

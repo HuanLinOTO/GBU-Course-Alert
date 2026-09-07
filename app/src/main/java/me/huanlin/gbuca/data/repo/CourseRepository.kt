@@ -65,7 +65,8 @@ class CourseRepository(
      * zc 语义：未开学 = 0，第 1 周 = 1。以按校历推算的默认锚点为起点，最多探测 3 次：
      * zc==1 命中；zc==0 未开学则后移一周；zc>=2 则直接回推 (zc-1) 周。
      * [force] 时清除用户手动设置并强制校准（设置页按钮）；自动校准遇手动设置则跳过。
-     * 返回校准出的周一日期；无法校准返回 null。
+     * 接口需教务会话：无会话先登录，过期重登一次重试（登录/网络异常向上抛出，由调用方提示）。
+     * 返回校准出的周一日期；教务系统未返回周次信息时返回 null。
      */
     suspend fun calibrateSemesterStart(xnxq: String, force: Boolean = false): LocalDate? {
         if (force) settings.clearSemesterStartCustomized(xnxq)
@@ -74,7 +75,7 @@ class CourseRepository(
         val (xn, xq) = m.destructured
         var cand = SettingsStore.defaultStartMonday(xnxq)
         repeat(3) {
-            val r = runCatching { client.queryXnxqZc(cand) }.getOrNull() ?: return null
+            val r = queryZcWithSession(cand) ?: return null
             val (rxn, rxq, zc) = r
             if ("$rxn$rxq" != xnxq) return null   // 日期落在别的学期，无法校准
             when {
@@ -88,6 +89,17 @@ class CourseRepository(
             }
         }
         return null
+    }
+
+    /** 日期→周次查询，带会话保障：无会话先登录；过期重登一次并重试（与 [sync] 一致）。 */
+    private suspend fun queryZcWithSession(rq: LocalDate): Triple<String, String, Int>? {
+        if (!client.hasSession) loginWithStoredCredentials()
+        return try {
+            client.queryXnxqZc(rq)
+        } catch (e: GbuException.SessionExpired) {
+            loginWithStoredCredentials()
+            client.queryXnxqZc(rq)
+        }
     }
 
     private suspend fun loginWithStoredCredentials() {

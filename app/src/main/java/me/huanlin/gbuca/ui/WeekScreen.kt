@@ -2,6 +2,7 @@ package me.huanlin.gbuca.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -224,7 +225,14 @@ private fun MeetingChip(
 ) {
     val color = courseColor(meeting.rwh)
     val isLab = meeting.role == "课内实验"
-    val bg = if (isLab) Color(0xFFF3E5F5) else color.copy(alpha = 0.13f)
+    // 实验课实底色与普通半透明课块区分；底/字色随深浅色切换，深色下用暗紫底 + 浅紫字
+    val labDark = isSystemInDarkTheme()
+    val bg = if (isLab) {
+        if (labDark) Color(0xFF3A2C4F) else Color(0xFFF3E5F5)
+    } else color.copy(alpha = 0.13f)
+    val fg = if (isLab) {
+        if (labDark) Color(0xFFD6BDF2) else Color(0xFF7B1FA2)
+    } else color
     Card(
         modifier = modifier.clickable(onClick = onClick),
         colors = CardDefaults.cardColors(containerColor = bg),
@@ -236,7 +244,7 @@ private fun MeetingChip(
                 name,
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.SemiBold,
-                color = if (isLab) Color(0xFF7B1FA2) else color,
+                color = fg,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )

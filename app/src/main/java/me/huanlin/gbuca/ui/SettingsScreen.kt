@@ -10,6 +10,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -57,7 +59,7 @@ import me.huanlin.gbuca.widget.TodayWidgetReceiver
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun SettingsScreen(
     reminderScheduler: ReminderScheduler,
@@ -161,12 +163,22 @@ fun SettingsScreen(
             Column {
                 Text(stringResource(R.string.settings_reminder_minutes_label), style = MaterialTheme.typography.bodyMedium)
                 Spacer(Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                // FlowRow：窄屏/大字号时整只换行到下一行，避免 chip 被压缩后 label 逐字竖排
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
                     listOf(5, 10, 15, 20, 30).forEach { min ->
                         FilterChip(
                             selected = reminderMinutes == min,
                             onClick = { vm.setReminderMinutes(min) },
-                            label = { Text(stringResource(R.string.settings_reminder_minutes_chip, min)) },
+                            label = {
+                                Text(
+                                    stringResource(R.string.settings_reminder_minutes_chip, min),
+                                    maxLines = 1,
+                                    softWrap = false,
+                                )
+                            },
                         )
                     }
                 }
@@ -235,6 +247,11 @@ fun SettingsScreen(
                     style = MaterialTheme.typography.bodySmall,
                     color = if (ui.calibrateOk == true) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
                 )
+            }
+            if (ui.needWebLogin) {
+                TextButton(onClick = { WebLoginActivity.start(context) }) {
+                    Text(stringResource(R.string.today_open_web_login))
+                }
             }
             Text(
                 stringResource(R.string.settings_term_hint),
