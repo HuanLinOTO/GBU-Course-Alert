@@ -288,6 +288,47 @@ fun SettingsScreen(
             )
         }
 
+        // ---- 导出到日历 ----
+        SectionTitle(stringResource(R.string.settings_section_export))
+        SettingsCard {
+            Text(
+                stringResource(R.string.settings_export_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            val createDoc = rememberLauncherForActivityResult(
+                ActivityResultContracts.CreateDocument("text/calendar")
+            ) { uri -> if (uri != null) vm.exportIcs(uri) }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(onClick = { createDoc.launch(vm.suggestedIcsFileName) }) {
+                    Text(stringResource(R.string.settings_export_file))
+                }
+                OutlinedButton(onClick = {
+                    vm.shareIcs { intent ->
+                        val ok = runCatching {
+                            context.startActivity(
+                                Intent.createChooser(
+                                    intent,
+                                    context.getString(R.string.settings_export_share),
+                                )
+                            )
+                        }.isSuccess
+                        if (!ok) vm.showExportMessage(context.getString(R.string.msg_export_no_app))
+                    }
+                }) {
+                    Text(stringResource(R.string.settings_export_share))
+                }
+            }
+            ui.exportMessage?.let {
+                Text(
+                    it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (ui.exportOk == true) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.error,
+                )
+            }
+        }
+
         // ---- 关于 ----
         SectionTitle(stringResource(R.string.settings_section_about))
         val uriHandler = LocalUriHandler.current

@@ -1,5 +1,7 @@
 package me.huanlin.gbuca.ui
 
+import android.content.Intent
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -57,6 +59,9 @@ class AppViewModel : ViewModel() {
         val needWebLogin: Boolean = false,
         /** 学期校准消息语义：true=成功（主色）、false=失败（错误色）、null=其他消息。 */
         val calibrateOk: Boolean? = null,
+        /** 导出到日历的独立提示（不与同步/校准消息串台）。 */
+        val exportMessage: String? = null,
+        val exportOk: Boolean? = null,
     )
 
     val ui = MutableStateFlow(UiState())
@@ -179,6 +184,65 @@ class AppViewModel : ViewModel() {
     fun updateGridFromData() {
         // TimeGrid 在同步时已由 kbjclist 更新
     }
+
+    // ---- 导出到日历 ----
+
+    val suggestedIcsFileName: String get() = app.icsExport.suggestedFileName(xnxq)
+
+    /** 导出当前学期到用户通过 SAF 选择的 Uri。 */
+    fun exportIcs(uri: Uri) {
+        viewModelScope.launch {
+            ui.value = ui.value.copy(exportMessage = null, exportOk = null)
+            val result = runCatchingNonCancellation {
+                val content = app.icsExport.build(xnxq) ?: throw NoCourses
+                app.icsExport.writeToUri(uri, content)
+            }
+            val e = result.exceptionOrNull()
+            ui.value = ui.value.copy(
+                exportMessage = when {
+                    e == null -> app.getString(R.string.msg_export_ok)
+                    e === NoCourses -> app.getString(R.string.msg_export_empty)
+                    else -> exportFailed(e)
+                },
+                exportOk = e == null,
+            )
+        }
+    }
+
+    /** 构造分享 Intent 并交回 UI 层启动（UI 负责处理 ActivityNotFoundException）。 */
+    fun shareIcs(onIntent: (Intent) -> Unit) {
+        viewModelScope.launch {
+            ui.value = ui.value.copy(exportMessage = null, exportOk = null)
+            val result = runCatchingNonCancellation {
+                val content = app.icsExport.build(xnxq) ?: throw NoCourses
+                app.icsExport.shareIntent(content, app.icsExport.suggestedFileName(xnxq))
+            }
+            val intent = result.getOrNull()
+            if (intent != null) {
+                onIntent(intent)
+            } else {
+                val e = result.exceptionOrNull()
+                ui.value = ui.value.copy(
+                    exportMessage = if (e === NoCourses) app.getString(R.string.msg_export_empty)
+                    else exportFailed(e ?: IllegalStateException("unknown")),
+                    exportOk = false,
+                )
+            }
+        }
+    }
+
+    /** 导出分组内的失败提示（如设备无日历 App）。 */
+    fun showExportMessage(message: String) {
+        ui.value = ui.value.copy(exportMessage = message, exportOk = false)
+    }
+
+    /** 导出失败的兜底文案：永不出现 "?"。 */
+    private fun exportFailed(e: Throwable): String = app.getString(
+        R.string.msg_export_failed,
+        e.message?.takeIf { it.isNotBlank() } ?: e.javaClass.simpleName,
+    )
+
+    private object NoCourses : Exception()
 
     // ---- 服务器地址（OOBE / 设置页） ----
 

@@ -117,6 +117,16 @@
     <string name="settings_about">数据仅存本机（凭据经 Keystore 加密），不同步任何服务器。\n半角数字之学号 + 明文密码经 HTTPS 直连学校 iAAA 认证。</string>
     <string name="settings_last_sync">上次同步：%1$s</string>
 
+    <!-- 导出到日历 -->
+    <string name="settings_section_export">导出到日历</string>
+    <string name="settings_export_hint">把当前学期课表导出为 .ics 文件，可导入系统日历（Google 日历、Apple 日历、Outlook 等）。\n重复课次以「每周重复」事件表示，可整条编辑或删除；事件内提醒跟随上方「提前提醒时间」。</string>
+    <string name="settings_export_file">导出 .ics 文件</string>
+    <string name="settings_export_share">分享到日历 App</string>
+    <string name="msg_export_ok">已导出当前学期课表</string>
+    <string name="msg_export_empty">当前学期还没有课程，请先同步</string>
+    <string name="msg_export_failed">导出失败：%1$s</string>
+    <string name="msg_export_no_app">没有找到可处理日历的应用，请改用「导出 .ics 文件」</string>
+
     <!-- 同步 / 错误消息（ViewModel） -->
     <string name="msg_synced_courses">已同步 %1$d 门课程</string>
     <string name="msg_calibrate_success">校准成功：第 1 周周一 = %1$s</string>
