@@ -20,8 +20,8 @@ android {
         applicationId = "me.huanlin.gbuca"
         minSdk = 26
         targetSdk = 37
-        versionCode = 4
-        versionName = "0.0.4"
+        versionCode = 5
+        versionName = "0.0.5"
     }
 
     signingConfigs {
