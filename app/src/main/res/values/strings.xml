@@ -82,6 +82,9 @@
     <string name="today_finished">今日课程已结束</string>
     <string name="today_free">今天没有安排</string>
     <string name="today_periods">第%1$d-%2$d节</string>
+    <string name="today_rest_action">休息</string>
+    <string name="today_rest_active">休息中 · 点此恢复</string>
+    <string name="today_rest_hint">今日休息中，不会收到任何课程提醒</string>
     <string name="badge_next">下一节</string>
     <string name="badge_now">进行中</string>
     <string name="badge_lab">实验</string>

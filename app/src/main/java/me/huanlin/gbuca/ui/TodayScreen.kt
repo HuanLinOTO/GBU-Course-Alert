@@ -19,11 +19,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -31,6 +34,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -48,6 +52,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.isSpecified
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import me.huanlin.gbuca.R
 import me.huanlin.gbuca.domain.logic.ScheduleLogic
 import me.huanlin.gbuca.domain.logic.ScheduleLogic.ClassStatus
@@ -66,7 +73,18 @@ fun TodayScreen(
 ) {
     val termData by vm.termData.collectAsState()
     val ui by vm.ui.collectAsState()
+    val resting by vm.resting.collectAsState()
     val snackbar = remember { SnackbarHostState() }
+
+    // 跨零点或从后台回到前台时重新判定：否则按钮会显示「休息中」但提醒其实已经恢复
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) vm.refreshResting()
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     LaunchedEffect(ui.message) {
         ui.message?.let {
@@ -100,6 +118,7 @@ fun TodayScreen(
         snackbarHost = { SnackbarHost(snackbar) },
     ) { padding ->
         Column(Modifier.padding(padding).fillMaxSize()) {
+            RestBar(resting = resting, isToday = isToday, onToggle = { vm.setResting(!resting) })
             if (ui.needWebLogin) {
                 Card(
                     modifier = Modifier.padding(16.dp).fillMaxWidth(),
@@ -233,6 +252,34 @@ private fun DayPager(
         if (!isToday) {
             TextButton(onClick = onBackToToday, modifier = Modifier.align(Alignment.CenterHorizontally)) {
                 Text(stringResource(R.string.today_back_to_today))
+            }
+        }
+    }
+}
+
+/** 「今日休息」：一键静音当天全部提醒，再次点击恢复；仅今日页显示。 */
+@Composable
+private fun RestBar(resting: Boolean, isToday: Boolean, onToggle: () -> Unit) {
+    if (!isToday) return
+    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
+        if (resting) {
+            Button(
+                onClick = onToggle,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                ),
+            ) { Text(stringResource(R.string.today_rest_active)) }
+            Text(
+                stringResource(R.string.today_rest_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 6.dp),
+            )
+        } else {
+            OutlinedButton(onClick = onToggle, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.today_rest_action))
             }
         }
     }
