@@ -110,7 +110,10 @@ class CourseRepository(
 
     private suspend fun fetchAndStore(xnxq: String): SyncResult {
         val m = Regex("""^(\d{4}-\d{4})([12])$""").find(xnxq)
-            ?: throw GbuException.ApiError("学期格式异常: $xnxq")
+            ?: throw GbuException.ApiError(
+                stage = GbuException.ApiError.Stage.Parse,
+                summary = "学期格式异常：$xnxq",
+            )
         val (xn, xq) = m.destructured
 
         val all = mutableListOf<YxkcItem>()

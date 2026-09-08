@@ -87,13 +87,13 @@ class GbuClient(
             .build()
         val req = Request.Builder().url("${endpoints.iaaaBase}oauthlogin.do").post(form).build()
 
-        val body = apiClient.newCall(req).execute().use { resp ->
-            resp.body?.string() ?: throw GbuException.Network(java.io.IOException("空响应"))
+        val (httpCode, body) = apiClient.newCall(req).execute().use { resp ->
+            resp.code to (resp.body?.string() ?: throw GbuException.Network(java.io.IOException("空响应")))
         }
         // 隐私约定：不记录响应内容（含 token / 密码相关字段）到日志
         val obj: JsonObject = runCatching { json.parseToJsonElement(body) as? JsonObject }
-            .getOrElse { throw GbuException.ApiError("iAAA 响应异常: ${body.take(120)}") }
-            ?: throw GbuException.ApiError("iAAA 响应异常: ${body.take(120)}")
+            .getOrElse { throw iaaaNotJson(body, httpCode) }
+            ?: throw iaaaNotJson(body, httpCode)
 
         val success = (obj["success"] as? JsonPrimitive)?.content == "true"
         if (!success) {
@@ -111,7 +111,13 @@ class GbuClient(
             }
         }
         val token = (obj["token"] as? JsonPrimitive)?.content
-            ?: throw GbuException.ApiError("iAAA 未返回 token")
+            ?: throw GbuException.ApiError(
+                stage = GbuException.ApiError.Stage.IaaaLogin,
+                summary = "认证服务器未返回登录令牌（认证地址可能不正确）",
+                url = "${endpoints.iaaaBase}oauthlogin.do",
+                httpStatus = httpCode,
+                snippet = body,
+            )
 
         val rand = Math.random()
         val codeReq = Request.Builder()
@@ -120,7 +126,15 @@ class GbuClient(
             .build()
         loginClient.newCall(codeReq).execute().use { resp ->
             if (!cookieJar.hasJwxtSession() && !resp.request.url.encodedPath.contains("authentication")) {
-                throw GbuException.ApiError("教务系统会话建立失败")
+                val e = GbuException.ApiError(
+                    stage = GbuException.ApiError.Stage.JwxtSession,
+                    summary = "教务系统会话建立失败（教务地址可能不正确，或需要网页登录）",
+                    url = resp.request.url.toString(),
+                    httpStatus = resp.code,
+                    snippet = runCatching { resp.body?.string() }.getOrNull(),
+                )
+                android.util.Log.w("GbuClient", e.detail)
+                throw e
             }
         }
     }
@@ -166,24 +180,48 @@ class GbuClient(
         }
     }
 
+    /** iAAA 返回的不是 JSON：通常是认证地址填错，拿到了 404 或门户首页 HTML。 */
+    private fun iaaaNotJson(body: String, httpCode: Int) = GbuException.ApiError(
+        stage = GbuException.ApiError.Stage.IaaaLogin,
+        summary = "认证接口返回的不是登录结果（认证地址可能不正确）",
+        url = "${endpoints.iaaaBase}oauthlogin.do",
+        httpStatus = httpCode,
+        snippet = body,
+    )
+
     private fun <T> parseApiResponse(resp: Response, parse: (String) -> T): T {
+        val url = resp.request.url.toString()
         if (resp.isRedirect) {
-            android.util.Log.w("GbuClient", "302 redirect → 会话过期")
+            android.util.Log.w("GbuClient", "302 redirect → 会话过期 url=$url")
             throw GbuException.SessionExpired()
         }
         val text = resp.body?.string() ?: throw GbuException.Network(java.io.IOException("空响应"))
         if (!resp.isSuccessful) {
-            android.util.Log.w("GbuClient", "HTTP ${resp.code}")
-            throw GbuException.ApiError("HTTP ${resp.code}")
+            val e = GbuException.ApiError(
+                stage = GbuException.ApiError.Stage.CourseApi,
+                summary = "教务接口返回 HTTP ${resp.code}（教务地址或学期可能不正确）",
+                url = url,
+                httpStatus = resp.code,
+                snippet = text,
+            )
+            android.util.Log.w("GbuClient", e.detail)
+            throw e
         }
         val trimmed = text.trimStart()
         if (trimmed.startsWith("<")) {
-            android.util.Log.w("GbuClient", "返回 HTML（登录页）→ 会话过期")
+            android.util.Log.w("GbuClient", "返回 HTML（登录页）→ 会话过期 url=$url")
             throw GbuException.SessionExpired()
         }
-        return runCatching { parse(text) }.getOrElse {
-            android.util.Log.w("GbuClient", "响应解析失败")
-            throw GbuException.ApiError("响应解析失败")
+        return runCatching { parse(text) }.getOrElse { cause ->
+            val e = GbuException.ApiError(
+                stage = GbuException.ApiError.Stage.Parse,
+                summary = "教务接口返回的数据无法解析（接口可能已变更）",
+                url = url,
+                httpStatus = resp.code,
+                snippet = text,
+            )
+            android.util.Log.w("GbuClient", e.detail, cause)
+            throw e
         }
     }
 
