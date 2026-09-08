@@ -31,7 +31,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -50,6 +49,7 @@ import me.huanlin.gbuca.R
 import me.huanlin.gbuca.reminder.LiveUpdateNotifier
 import me.huanlin.gbuca.reminder.ReminderScheduler
 import me.huanlin.gbuca.data.remote.HostNormalizer
+import me.huanlin.gbuca.ui.components.ErrorMessage
 import me.huanlin.gbuca.ui.components.PermissionChecklist
 import me.huanlin.gbuca.ui.components.ReminderControls
 import me.huanlin.gbuca.widget.TodayWidgetReceiver
@@ -69,7 +69,6 @@ fun SettingsScreen(
     val reminderMinutes by vm.reminderMinutes.collectAsState()
     var username by rememberSaveable { mutableStateOf(GbuCaApp.instance.creds.username ?: "") }
     var password by remember { mutableStateOf("") }
-    var savedTick by remember { mutableIntStateOf(0) }
 
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
@@ -113,10 +112,16 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
             )
+            val hasSavedPassword = remember { GbuCaApp.instance.creds.password != null }
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
-                label = { Text(if (username.isBlank()) stringResource(R.string.login_password) else stringResource(R.string.settings_password_keep)) },
+                label = {
+                    Text(
+                        if (hasSavedPassword) stringResource(R.string.settings_password_keep)
+                        else stringResource(R.string.login_password)
+                    )
+                },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 visualTransformation = PasswordVisualTransformation(),
@@ -129,14 +134,23 @@ fun SettingsScreen(
                     }
                 },
             )
+            val needPasswordHint = stringResource(R.string.settings_password_required_for_new_id)
+            var guardMessage by remember { mutableStateOf<String?>(null) }
             Row {
                 Button(onClick = {
-                    if (username.isNotBlank()) {
-                        vm.saveCredentials(username, password.ifBlank {
-                            GbuCaApp.instance.creds.password ?: ""
-                        })
-                        savedTick++
-                        vm.sync()
+                    val u = username.trim()
+                    val savedId = GbuCaApp.instance.creds.username.orEmpty()
+                    when {
+                        u.isBlank() -> Unit
+                        // 学号变了却沿用旧密码，几乎必然登录失败：就地拦截
+                        password.isBlank() && u != savedId -> guardMessage = needPasswordHint
+                        else -> {
+                            guardMessage = null
+                            vm.saveCredentialsAndLogin(
+                                u,
+                                password.ifBlank { GbuCaApp.instance.creds.password ?: "" },
+                            )
+                        }
                     }
                 }, enabled = !ui.syncing) {
                     if (ui.syncing) {
@@ -146,20 +160,21 @@ fun SettingsScreen(
                         )
                         Spacer(Modifier.width(8.dp))
                     }
-                    Text(if (ui.syncing) stringResource(R.string.settings_syncing) else stringResource(R.string.settings_save_and_sync))
+                    Text(if (ui.syncing) stringResource(R.string.settings_syncing) else stringResource(R.string.settings_save_and_login))
                 }
                 Spacer(Modifier.width(12.dp))
                 OutlinedButton(onClick = { vm.sync() }, enabled = !ui.syncing) {
                     Text(stringResource(R.string.settings_sync_only))
                 }
             }
-            ui.message?.let {
+            guardMessage?.let {
                 Text(
                     it,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error,
                 )
             }
+            ErrorMessage(ui.message, detail = ui.errorDetail, ok = ui.messageOk)
         }
 
         // ---- 提醒 ----
@@ -202,13 +217,7 @@ fun SettingsScreen(
                 onCalibrate = { vm.calibrateSemesterStartFromServer() },
                 onConfirm = { vm.setSemesterStartMonday(it) },
             )
-            ui.message?.let {
-                Text(
-                    it,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = if (ui.calibrateOk == true) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
-                )
-            }
+            ErrorMessage(ui.message, detail = ui.errorDetail, ok = ui.messageOk)
             if (ui.needWebLogin) {
                 TextButton(onClick = { WebLoginActivity.start(context) }) {
                     Text(stringResource(R.string.today_open_web_login))

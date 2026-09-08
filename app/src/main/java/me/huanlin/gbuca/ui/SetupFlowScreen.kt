@@ -58,6 +58,7 @@ import me.huanlin.gbuca.data.remote.ProbeResult
 import me.huanlin.gbuca.domain.oobe.OobeFlow
 import me.huanlin.gbuca.domain.oobe.OobeStep
 import me.huanlin.gbuca.reminder.ReminderScheduler
+import me.huanlin.gbuca.ui.components.ErrorMessage
 import me.huanlin.gbuca.ui.components.PermissionChecklist
 import me.huanlin.gbuca.ui.components.ReminderControls
 import me.huanlin.gbuca.ui.components.rememberPermissionStates
@@ -364,17 +365,11 @@ private fun LoginStep(
                 }
             },
         )
-        ui.message?.let {
-            Spacer(Modifier.height(8.dp))
-            Text(
-                it,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.error,
-            )
-            if (onPrevious != null) {
-                TextButton(onClick = onPrevious) {
-                    Text(stringResource(R.string.oobe_login_back_to_address))
-                }
+        if (ui.message != null) Spacer(Modifier.height(8.dp))
+        ErrorMessage(ui.message, detail = ui.errorDetail, ok = ui.messageOk)
+        if (ui.message != null && onPrevious != null) {
+            TextButton(onClick = onPrevious) {
+                Text(stringResource(R.string.oobe_login_back_to_address))
             }
         }
         if (ui.needWebLogin) {

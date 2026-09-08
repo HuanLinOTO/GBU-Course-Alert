@@ -35,6 +35,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import me.huanlin.gbuca.R
+import me.huanlin.gbuca.ui.components.ErrorMessage
 
 /** 首次使用登录页：学号/密码登录 iAAA，成功后即同步课表。 */
 @Composable
@@ -126,14 +127,8 @@ fun LoginScreen(
                 Text(stringResource(R.string.login_button))
             }
         }
-        ui.message?.let {
-            Spacer(Modifier.height(8.dp))
-            Text(
-                it,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.error,
-            )
-        }
+        if (ui.message != null) Spacer(Modifier.height(8.dp))
+        ErrorMessage(ui.message, detail = ui.errorDetail, ok = ui.messageOk)
         if (ui.needWebLogin) {
             Spacer(Modifier.height(8.dp))
             OutlinedButton(onClick = onOpenWebLogin, modifier = Modifier.fillMaxWidth()) {

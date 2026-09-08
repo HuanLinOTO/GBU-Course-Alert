@@ -10,8 +10,10 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import me.huanlin.gbuca.BuildConfig
 import me.huanlin.gbuca.GbuCaApp
 import me.huanlin.gbuca.R
+import me.huanlin.gbuca.data.GbuDiagnostics
 import me.huanlin.gbuca.data.GbuException
 import me.huanlin.gbuca.data.repo.CourseRepository
 import me.huanlin.gbuca.domain.logic.ScheduleLogic
@@ -78,9 +80,11 @@ class AppViewModel : ViewModel() {
     data class UiState(
         val syncing: Boolean = false,
         val message: String? = null,
+        /** 失败时的技术细节（可复制上报）；成功消息或非接口失败为 null。 */
+        val errorDetail: String? = null,
+        /** 消息语义：true=成功（主色）、false=失败（错误色）、null=中性（错误色）。 */
+        val messageOk: Boolean? = null,
         val needWebLogin: Boolean = false,
-        /** 学期校准消息语义：true=成功（主色）、false=失败（错误色）、null=其他消息。 */
-        val calibrateOk: Boolean? = null,
         /** 导出到日历的独立提示（不与同步/校准消息串台）。 */
         val exportMessage: String? = null,
         val exportOk: Boolean? = null,
@@ -94,7 +98,7 @@ class AppViewModel : ViewModel() {
             return
         }
         viewModelScope.launch {
-            ui.value = ui.value.copy(syncing = true, message = null, calibrateOk = null)
+            ui.value = ui.value.copy(syncing = true, message = null, errorDetail = null, messageOk = null)
             val result = runCatchingNonCancellation { repo.sync(xnxq) }
             val e = result.exceptionOrNull()
             ui.value = if (e == null) {
@@ -102,11 +106,14 @@ class AppViewModel : ViewModel() {
                 ui.value.copy(
                     syncing = false,
                     message = app.getString(R.string.msg_synced_courses, result.getOrThrow().courseCount),
+                    messageOk = true,
                 )
             } else {
                 ui.value.copy(
                     syncing = false,
                     message = friendlyError(e),
+                    errorDetail = errorDetailOf(e),
+                    messageOk = false,
                     needWebLogin = e is GbuException.NeedCaptcha || e is GbuException.NeedSms,
                 )
             }
@@ -117,7 +124,13 @@ class AppViewModel : ViewModel() {
     /** 首次登录：先认证，成功才保存凭据并同步课表。成功时不产生任何提示消息。 */
     fun login(u: String, p: String, onSuccess: () -> Unit) {
         viewModelScope.launch {
-            ui.value = ui.value.copy(syncing = true, message = null, needWebLogin = false, calibrateOk = null)
+            ui.value = ui.value.copy(
+                syncing = true,
+                message = null,
+                errorDetail = null,
+                messageOk = null,
+                needWebLogin = false,
+            )
             val result = runCatchingNonCancellation {
                 app.client.login(u, p)
                 app.creds.save(u, p)
@@ -128,6 +141,8 @@ class AppViewModel : ViewModel() {
                 syncing = false,
                 // 仅失败时提示：成功时若仍调 friendlyError(null) 会渲染成「同步失败：?」
                 message = e?.let { friendlyError(it) },
+                errorDetail = errorDetailOf(e),
+                messageOk = if (e == null) null else false,
                 needWebLogin = e is GbuException.NeedCaptcha || e is GbuException.NeedSms,
             )
             if (e == null) {
@@ -155,6 +170,8 @@ class AppViewModel : ViewModel() {
         is GbuException.NeedSms -> app.getString(R.string.error_need_sms)
         is GbuException.SessionExpired -> app.getString(R.string.error_session_expired)
         is GbuException.Network -> app.getString(R.string.error_network)
+        // summary 自带环节与最可能原因，不再套「同步失败：」前缀
+        is GbuException.ApiError -> e.summary
         is java.io.IOException -> app.getString(R.string.error_network)
         else -> app.getString(
             R.string.error_sync_failed,
@@ -162,8 +179,56 @@ class AppViewModel : ViewModel() {
         )
     }
 
-    fun saveCredentials(u: String, p: String) {
-        app.creds.save(u, p)
+    /** 失败详情（含版本与时间），供「复制错误详情」；非 ApiError 返回 null。 */
+    private fun errorDetailOf(e: Throwable?): String? =
+        (e as? GbuException.ApiError)?.let {
+            GbuDiagnostics.reportOf(
+                message = it.summary,
+                detail = it.detail,
+                versionName = BuildConfig.VERSION_NAME,
+                timestampMillis = System.currentTimeMillis(),
+            )
+        }
+
+    /**
+     * 设置页「保存并登录」：先用新凭据登录，成功才覆盖已存凭据，再同步。
+     * 失败时凭据与会话保持原样 —— 旧会话仍可用，App 不会被打坏。
+     */
+    fun saveCredentialsAndLogin(u: String, p: String) {
+        viewModelScope.launch {
+            ui.value = ui.value.copy(syncing = true, message = null, errorDetail = null, messageOk = null)
+            val auth = runCatchingNonCancellation {
+                app.client.login(u, p)
+                app.creds.save(u, p)
+            }
+            val authError = auth.exceptionOrNull()
+            if (authError != null) {
+                ui.value = ui.value.copy(
+                    syncing = false,
+                    message = friendlyError(authError),
+                    errorDetail = errorDetailOf(authError),
+                    messageOk = false,
+                    needWebLogin = authError is GbuException.NeedCaptcha || authError is GbuException.NeedSms,
+                )
+                return@launch
+            }
+            val sync = runCatchingNonCancellation { repo.sync(xnxq) }
+            val syncError = sync.exceptionOrNull()
+            ui.value = ui.value.copy(
+                syncing = false,
+                message = when {
+                    syncError == null ->
+                        app.getString(R.string.msg_credentials_saved, sync.getOrThrow().courseCount)
+                    else ->
+                        app.getString(R.string.msg_credentials_saved_sync_failed, friendlyError(syncError))
+                },
+                errorDetail = errorDetailOf(syncError),
+                messageOk = syncError == null,
+                needWebLogin = syncError is GbuException.NeedCaptcha || syncError is GbuException.NeedSms,
+            )
+            me.huanlin.gbuca.widget.TodayWidgetReceiver.refreshAll(app)
+            app.reminderScheduler.rescheduleAsync()
+        }
     }
 
     fun clearMessage() {
@@ -182,7 +247,7 @@ class AppViewModel : ViewModel() {
             return
         }
         viewModelScope.launch {
-            ui.value = ui.value.copy(syncing = true, message = null, calibrateOk = null)
+            ui.value = ui.value.copy(syncing = true, message = null, errorDetail = null, messageOk = null)
             val result = runCatchingNonCancellation { repo.calibrateSemesterStart(xnxq, force = true) }
             val date = result.getOrNull()
             val e = result.exceptionOrNull()
@@ -193,7 +258,8 @@ class AppViewModel : ViewModel() {
                     e != null -> friendlyError(e)
                     else -> app.getString(R.string.msg_calibrate_unavailable)
                 },
-                calibrateOk = if (date != null) true else false,
+                errorDetail = errorDetailOf(e),
+                messageOk = date != null,
                 needWebLogin = e is GbuException.NeedCaptcha || e is GbuException.NeedSms,
             )
             if (date != null) {

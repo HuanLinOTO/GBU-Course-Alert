@@ -7,6 +7,7 @@
     <string name="channel_reminders">上课提醒</string>
     <string name="channel_live">课程实时状态（Live Update）</string>
     <string name="no_room">无地点</string>
+    <string name="common_copy_error_detail">复制错误详情</string>
 
     <!-- 登录页 -->
     <string name="login_hello">泥吼！</string>
@@ -125,7 +126,10 @@
     <string name="common_cancel">取消</string>
     <string name="settings_section_account">账号</string>
     <string name="settings_password_keep">密码（留空保持不变）</string>
-    <string name="settings_save_and_sync">保存并同步</string>
+    <string name="settings_password_required_for_new_id">更改学号后需重新输入密码</string>
+    <string name="msg_credentials_saved">已保存并登录，同步到 %1$d 门课程</string>
+    <string name="msg_credentials_saved_sync_failed">已保存并登录，但同步失败：%1$s</string>
+    <string name="settings_save_and_login">保存并登录</string>
     <string name="settings_syncing">同步中…</string>
     <string name="settings_sync_only">仅同步</string>
     <string name="settings_section_reminder">上课提醒</string>
