@@ -86,10 +86,10 @@ fun TodayScreen(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    LaunchedEffect(ui.message) {
-        ui.message?.let {
+    LaunchedEffect(ui.snackbar) {
+        ui.snackbar?.let {
             snackbar.showSnackbar(it)
-            vm.clearMessage()
+            vm.clearSnackbar()
         }
     }
 

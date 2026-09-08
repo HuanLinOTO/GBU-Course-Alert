@@ -84,6 +84,12 @@ class AppViewModel : ViewModel() {
         val errorDetail: String? = null,
         /** 消息语义：true=成功（主色）、false=失败（错误色）、null=中性（错误色）。 */
         val messageOk: Boolean? = null,
+        /**
+         * 今日页专用瞬时消息（snackbar），显示后即清除。
+         * 与 [message] 分离：三个页面常驻组合，若共用同一字段，今日页会把
+         * 设置页/登录页的常驻错误提示抢走并在几秒后清空。
+         */
+        val snackbar: String? = null,
         val needWebLogin: Boolean = false,
         /** 导出到日历的独立提示（不与同步/校准消息串台）。 */
         val exportMessage: String? = null,
@@ -103,15 +109,14 @@ class AppViewModel : ViewModel() {
             val e = result.exceptionOrNull()
             ui.value = if (e == null) {
                 me.huanlin.gbuca.widget.TodayWidgetReceiver.refreshAll(app)
-                ui.value.copy(
-                    syncing = false,
-                    message = app.getString(R.string.msg_synced_courses, result.getOrThrow().courseCount),
-                    messageOk = true,
-                )
+                val msg = app.getString(R.string.msg_synced_courses, result.getOrThrow().courseCount)
+                ui.value.copy(syncing = false, message = msg, snackbar = msg, messageOk = true)
             } else {
+                val msg = friendlyError(e)
                 ui.value.copy(
                     syncing = false,
-                    message = friendlyError(e),
+                    message = msg,
+                    snackbar = msg,
                     errorDetail = errorDetailOf(e),
                     messageOk = false,
                     needWebLogin = e is GbuException.NeedCaptcha || e is GbuException.NeedSms,
@@ -231,8 +236,8 @@ class AppViewModel : ViewModel() {
         }
     }
 
-    fun clearMessage() {
-        ui.value = ui.value.copy(message = null)
+    fun clearSnackbar() {
+        ui.value = ui.value.copy(snackbar = null)
     }
 
     fun setSemesterStartMonday(date: java.time.LocalDate) {
