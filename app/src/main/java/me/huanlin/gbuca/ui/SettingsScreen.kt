@@ -296,6 +296,8 @@ fun SettingsScreen(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            val shareLabel = stringResource(R.string.settings_export_share)
+            val noAppMessage = stringResource(R.string.msg_export_no_app)
             val createDoc = rememberLauncherForActivityResult(
                 ActivityResultContracts.CreateDocument("text/calendar")
             ) { uri -> if (uri != null) vm.exportIcs(uri) }
@@ -306,17 +308,12 @@ fun SettingsScreen(
                 OutlinedButton(onClick = {
                     vm.shareIcs { intent ->
                         val ok = runCatching {
-                            context.startActivity(
-                                Intent.createChooser(
-                                    intent,
-                                    context.getString(R.string.settings_export_share),
-                                )
-                            )
+                            context.startActivity(Intent.createChooser(intent, shareLabel))
                         }.isSuccess
-                        if (!ok) vm.showExportMessage(context.getString(R.string.msg_export_no_app))
+                        if (!ok) vm.showExportMessage(noAppMessage)
                     }
                 }) {
-                    Text(stringResource(R.string.settings_export_share))
+                    Text(shareLabel)
                 }
             }
             ui.exportMessage?.let {
