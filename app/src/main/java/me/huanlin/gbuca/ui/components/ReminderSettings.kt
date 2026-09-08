@@ -1,10 +1,10 @@
 package me.huanlin.gbuca.ui.components
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Build
 import android.os.PowerManager
 import android.provider.Settings
@@ -34,6 +34,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -194,10 +195,16 @@ private fun PermissionRow(
     }
 }
 
-/** 优先弹出本应用的电池优化对话框；OEM 不支持时回退到系统列表页。 */
+/**
+ * 优先弹出本应用的电池优化对话框；OEM 不支持时回退到系统列表页。
+ *
+ * BatteryLife 抑制说明：本项目经 GitHub Releases 分发、不上架 Play Store，
+ * 而课表提醒必须在 Doze 下准时触发，故直接引导用户加入白名单。
+ */
+@SuppressLint("BatteryLife")
 private fun requestIgnoreBatteryOptimizations(context: Context) {
     val direct = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
-        .setData(Uri.parse("package:${context.packageName}"))
+        .setData("package:${context.packageName}".toUri())
     val ok = runCatching { context.startActivity(direct) }.isSuccess
     if (!ok) {
         runCatching {
