@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.room.Room
 import me.huanlin.gbuca.data.local.CredentialStore
 import me.huanlin.gbuca.data.local.PersistentCookieJar
+import me.huanlin.gbuca.data.export.IcsExportManager
 import me.huanlin.gbuca.data.local.SettingsStore
 import me.huanlin.gbuca.data.local.room.AppDatabase
 import me.huanlin.gbuca.data.remote.Endpoints
@@ -28,6 +29,8 @@ class GbuCaApp : Application() {
         private set
     lateinit var reminderScheduler: ReminderScheduler
         private set
+    lateinit var icsExport: IcsExportManager
+        private set
 
     override fun onCreate() {
         super.onCreate()
@@ -41,6 +44,7 @@ class GbuCaApp : Application() {
         creds = CredentialStore(this)
         repo = CourseRepository(client, db, creds, settings)
         reminderScheduler = ReminderScheduler(this, settings)
+        icsExport = IcsExportManager(this, repo, settings)
     }
 
     companion object {
