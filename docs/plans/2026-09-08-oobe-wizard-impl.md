@@ -1,7 +1,7 @@
 # OOBE 向导化实施计划
 
 > **For agentic workers:** 本计划按任务逐条执行，每个任务以「测试先行 → 实现 → 验证 → 提交」收尾。
-> 步骤使用 `- [ ]` 复选框跟踪进度。任务之间互相独立可评审，按顺序执行。
+> 步骤使用复选框跟踪进度。任务之间互相独立可评审，按顺序执行。
 
 **Goal:** 把首次使用流程改造成真正的 OOBE 向导（地址 → 登录 → 权限 → 提醒 → 完成），每步可回退，并在向导内完成权限授权与上课提醒设置。
 
@@ -66,7 +66,7 @@ androidx.lifecycle.compose（`LocalLifecycleOwner`）· OkHttp · java.time · J
   - `OobeFlow.startStep(hostsConfigured: Boolean, hasCredentials: Boolean): OobeStep`
   - `OobeFlow.progressOf(step: OobeStep): Pair<Int, Int>?`
 
-- [ ] **Step 1: 写失败测试** `app/src/test/java/me/huanlin/gbuca/OobeFlowTest.kt`
+- [x] **Step 1: 写失败测试** `app/src/test/java/me/huanlin/gbuca/OobeFlowTest.kt`
 
 ```kotlin
 package me.huanlin.gbuca
@@ -130,12 +130,12 @@ class OobeFlowTest {
 }
 ```
 
-- [ ] **Step 2: 运行测试确认失败**
+- [x] **Step 2: 运行测试确认失败**
 
 Run: `gradlew.bat :app:testDebugUnitTest --tests "me.huanlin.gbuca.OobeFlowTest"`
 Expected: 编译失败 —— `Unresolved reference: OobeFlow`
 
-- [ ] **Step 3: 实现**
+- [x] **Step 3: 实现**
 
 `app/src/main/java/me/huanlin/gbuca/domain/oobe/OobeFlow.kt`：
 
@@ -193,12 +193,12 @@ object OobeFlow {
 }
 ```
 
-- [ ] **Step 4: 运行测试确认通过**
+- [x] **Step 4: 运行测试确认通过**
 
 Run: `gradlew.bat :app:testDebugUnitTest --tests "me.huanlin.gbuca.OobeFlowTest"`
 Expected: PASS（5 个用例）
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**
 
 ```bash
 git add app/src/main/java/me/huanlin/gbuca/domain/oobe/OobeFlow.kt app/src/test/java/me/huanlin/gbuca/OobeFlowTest.kt
@@ -221,7 +221,7 @@ git commit -m "feat(oobe): OobeFlow 步骤机（顺序/回退/入口步/进度�
   - `suspend fun HostProbe.probe(host: String): ProbeResult`
   - `fun HostProbe.failureOf(e: java.io.IOException): ProbeFailure`
 
-- [ ] **Step 1: 写失败测试** `app/src/test/java/me/huanlin/gbuca/HostProbeTest.kt`
+- [x] **Step 1: 写失败测试** `app/src/test/java/me/huanlin/gbuca/HostProbeTest.kt`
 
 ```kotlin
 package me.huanlin.gbuca
@@ -271,12 +271,12 @@ class HostProbeTest {
 }
 ```
 
-- [ ] **Step 2: 运行测试确认失败**
+- [x] **Step 2: 运行测试确认失败**
 
 Run: `gradlew.bat :app:testDebugUnitTest --tests "me.huanlin.gbuca.HostProbeTest"`
 Expected: 编译失败 —— `Unresolved reference: HostProbe`
 
-- [ ] **Step 3: 实现**
+- [x] **Step 3: 实现**
 
 `app/src/main/java/me/huanlin/gbuca/data/remote/HostProbe.kt`：
 
@@ -339,12 +339,12 @@ object HostProbe {
 }
 ```
 
-- [ ] **Step 4: 运行测试确认通过**
+- [x] **Step 4: 运行测试确认通过**
 
 Run: `gradlew.bat :app:testDebugUnitTest --tests "me.huanlin.gbuca.HostProbeTest"`
 Expected: PASS（6 个用例）
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**
 
 ```bash
 git add app/src/main/java/me/huanlin/gbuca/data/remote/HostProbe.kt app/src/test/java/me/huanlin/gbuca/HostProbeTest.kt
@@ -368,7 +368,7 @@ git commit -m "feat(oobe): HostProbe 地址可达性探测（宽松判定 + 失�
   - `@Composable fun PermissionChecklist(scheduler: ReminderScheduler, modifier: Modifier = Modifier)`
   - `@Composable fun ReminderControls(enabled: Boolean, minutes: Int, onEnabledChange: (Boolean) -> Unit, onMinutesChange: (Int) -> Unit, modifier: Modifier = Modifier)`
 
-- [ ] **Step 1: strings.xml —— 删除被取代的旧条目**
+- [x] **Step 1: strings.xml —— 删除被取代的旧条目**
 
 删除以下 5 行（新组件用统一的 `perm_*` 文案）：
 
@@ -380,7 +380,7 @@ git commit -m "feat(oobe): HostProbe 地址可达性探测（宽松判定 + 失�
     <string name="settings_battery_whitelist">电池优化白名单（可选）</string>
 ```
 
-- [ ] **Step 2: strings.xml —— 新增权限文案**
+- [x] **Step 2: strings.xml —— 新增权限文案**
 
 在「设置」区块内 `settings_reminder_minutes_chip` 之后插入：
 
@@ -394,7 +394,7 @@ git commit -m "feat(oobe): HostProbe 地址可达性探测（宽松判定 + 失�
     <string name="perm_status_optional">未加入（可选）</string>
 ```
 
-- [ ] **Step 3: 新建 `ui/components/ReminderSettings.kt`**
+- [x] **Step 3: 新建 `ui/components/ReminderSettings.kt`**
 
 ```kotlin
 package me.huanlin.gbuca.ui.components
@@ -608,7 +608,7 @@ private fun requestIgnoreBatteryOptimizations(context: Context) {
 }
 ```
 
-- [ ] **Step 4: SettingsScreen 复用组件**
+- [x] **Step 4: SettingsScreen 复用组件**
 
 `app/src/main/java/me/huanlin/gbuca/ui/SettingsScreen.kt`：
 
@@ -643,12 +643,12 @@ import me.huanlin.gbuca.ui.components.PermissionChecklist
 import me.huanlin.gbuca.ui.components.ReminderControls
 ```
 
-- [ ] **Step 5: 编译 + 单测**
+- [x] **Step 5: 编译 + 单测**
 
 Run: `gradlew.bat :app:compileDebugKotlin :app:testDebugUnitTest`
 Expected: BUILD SUCCESSFUL，既有单测全部通过
 
-- [ ] **Step 6: 提交**
+- [x] **Step 6: 提交**
 
 ```bash
 git add app/src/main/java/me/huanlin/gbuca/ui/components/ReminderSettings.kt app/src/main/java/me/huanlin/gbuca/ui/SettingsScreen.kt app/src/main/res/values/strings.xml
@@ -677,7 +677,7 @@ git commit -m "refactor(ui): 权限清单与提醒控件抽为共用组件（设
   - `AppViewModel.credentialUsername: String?`、`hasCredentials: Boolean`、`needsOobe: Boolean`、
     `oobeStartStep(): OobeStep`、`finishOobe()`、`completeSetup(jwxtHost: String, iaaaHost: String)`
 
-- [ ] **Step 1: SettingsStore 新增 `oobeDone`**
+- [x] **Step 1: SettingsStore 新增 `oobeDone`**
 
 在 `app/src/main/java/me/huanlin/gbuca/data/local/SettingsStore.kt` 的 `iaaaHost` 之后插入：
 
@@ -688,7 +688,7 @@ git commit -m "refactor(ui): 权限清单与提醒控件抽为共用组件（设
         set(v) = prefs.edit { putBoolean("oobe_done", v) }
 ```
 
-- [ ] **Step 2: AppViewModel 门控与状态**
+- [x] **Step 2: AppViewModel 门控与状态**
 
 在 `app/src/main/java/me/huanlin/gbuca/ui/AppViewModel.kt`：
 
@@ -739,7 +739,7 @@ import me.huanlin.gbuca.domain.oobe.OobeStep
     }
 ```
 
-- [ ] **Step 3: strings.xml 新增向导文案**
+- [x] **Step 3: strings.xml 新增向导文案**
 
 在「OOBE 服务器配置向导」区块的 `setup_next` 之后插入：
 
@@ -782,7 +782,7 @@ import me.huanlin.gbuca.domain.oobe.OobeStep
     <string name="oobe_summary_not_joined">未加入（可选）</string>
 ```
 
-- [ ] **Step 4: 新建 `ui/SetupFlowScreen.kt`**
+- [x] **Step 4: 新建 `ui/SetupFlowScreen.kt`**
 
 ```kotlin
 package me.huanlin.gbuca.ui
@@ -1344,13 +1344,13 @@ private fun OobeFooter(
 }
 ```
 
-- [ ] **Step 5: 删除旧的 `ui/SetupScreen.kt`**
+- [x] **Step 5: 删除旧的 `ui/SetupScreen.kt`**
 
 ```bash
 git rm app/src/main/java/me/huanlin/gbuca/ui/SetupScreen.kt
 ```
 
-- [ ] **Step 6: MainActivity 门控**
+- [x] **Step 6: MainActivity 门控**
 
 把 `app/src/main/java/me/huanlin/gbuca/ui/MainActivity.kt` 的 `setContent { ... }` 内容替换为：
 
@@ -1396,12 +1396,12 @@ git rm app/src/main/java/me/huanlin/gbuca/ui/SetupScreen.kt
 
 > 注：Task 5 会在这里补 `onRerunOobe`；本步先保证可编译。
 
-- [ ] **Step 7: 编译 + 全量单测**
+- [x] **Step 7: 编译 + 全量单测**
 
 Run: `gradlew.bat :app:compileDebugKotlin :app:testDebugUnitTest`
 Expected: BUILD SUCCESSFUL（新增 11 个用例 + 既有 47 个全部通过）
 
-- [ ] **Step 8: 提交**
+- [x] **Step 8: 提交**
 
 ```bash
 git add app/src/main/java/me/huanlin/gbuca/domain/oobe app/src/main/java/me/huanlin/gbuca/data/remote/HostProbe.kt app/src/main/java/me/huanlin/gbuca/ui/components/ReminderSettings.kt app/src/main/java/me/huanlin/gbuca/ui/SetupFlowScreen.kt app/src/main/java/me/huanlin/gbuca/ui/MainActivity.kt app/src/main/java/me/huanlin/gbuca/ui/AppViewModel.kt app/src/main/java/me/huanlin/gbuca/data/local/SettingsStore.kt app/src/main/res/values/strings.xml
@@ -1424,7 +1424,7 @@ git commit -m "feat(oobe): 五步向导（地址探测/登录/权限/提醒/完�
   - `AppNavHost(vm, onOpenWebLogin, onRerunOobe: () -> Unit, reminderScheduler)`
   - `SettingsScreen(reminderScheduler, vm, onRerunOobe: () -> Unit)`
 
-- [ ] **Step 1: strings.xml 新增入口文案**
+- [x] **Step 1: strings.xml 新增入口文案**
 
 在「设置」区块 `settings_section_export` 之前插入：
 
@@ -1434,7 +1434,7 @@ git commit -m "feat(oobe): 五步向导（地址探测/登录/权限/提醒/完�
     <string name="settings_rerun_wizard">重新运行向导</string>
 ```
 
-- [ ] **Step 2: SettingsScreen 增加入口**
+- [x] **Step 2: SettingsScreen 增加入口**
 
 1. 函数签名加参数：
 
@@ -1465,7 +1465,7 @@ fun SettingsScreen(
         }
 ```
 
-- [ ] **Step 3: AppNavHost 传递回调**
+- [x] **Step 3: AppNavHost 传递回调**
 
 `app/src/main/java/me/huanlin/gbuca/ui/AppNavHost.kt`：
 
@@ -1503,7 +1503,7 @@ fun AppNavHost(
                 )
 ```
 
-- [ ] **Step 4: MainActivity 接线**
+- [x] **Step 4: MainActivity 接线**
 
 在 `AppNavHost(...)` 调用中补一行：
 
@@ -1511,12 +1511,12 @@ fun AppNavHost(
                             onRerunOobe = { oobeStart = OobeStep.Address },
 ```
 
-- [ ] **Step 5: 编译 + 单测 + lint**
+- [x] **Step 5: 编译 + 单测 + lint**
 
 Run: `gradlew.bat :app:compileDebugKotlin :app:testDebugUnitTest :app:lintDebug`
 Expected: BUILD SUCCESSFUL；lint 0 errors
 
-- [ ] **Step 6: 提交**
+- [x] **Step 6: 提交**
 
 ```bash
 git add app/src/main/res/values/strings.xml app/src/main/java/me/huanlin/gbuca/ui/SettingsScreen.kt app/src/main/java/me/huanlin/gbuca/ui/AppNavHost.kt app/src/main/java/me/huanlin/gbuca/ui/MainActivity.kt
@@ -1530,12 +1530,12 @@ git commit -m "feat(oobe): 设置页「重新运行向导」入口"
 **Files:**
 - Modify: `README.md`
 
-- [ ] **Step 1: 全量验证**
+- [x] **Step 1: 全量验证**
 
 Run: `gradlew.bat :app:testDebugUnitTest :app:assembleDebug :app:lintDebug`
 Expected: BUILD SUCCESSFUL，单测 58 个通过（既有 47 + 新增 11），lint 0 errors
 
-- [ ] **Step 2: README 补充向导描述**
+- [x] **Step 2: README 补充向导描述**
 
 在「功能」列表 `- **后台同步**` 之前插入：
 
@@ -1543,16 +1543,16 @@ Expected: BUILD SUCCESSFUL，单测 58 个通过（既有 47 + 新增 11），li
 - **首次使用向导**：地址 → 登录 → 权限 → 提醒 → 完成 五步，每步可回退；填错地址会做轻量连通性探测并给出原因，设置页可随时重跑
 ```
 
-- [ ] **Step 3: 提交**
+- [x] **Step 3: 提交**
 
 ```bash
 git add README.md
 git commit -m "docs: README 补充 OOBE 五步向导"
 ```
 
-- [ ] **Step 4: 更新实施计划勾选**
+- [x] **Step 4: 更新实施计划勾选**
 
-把本文件中所有 `- [ ]` 改为 `- [x]`，提交：
+把本文件中所有 `- [x]` 改为 `- [x]`，提交：
 
 ```bash
 git add docs/plans/2026-09-08-oobe-wizard-impl.md
