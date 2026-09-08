@@ -56,7 +56,7 @@ java.time · JUnit 4。**不新增任何第三方依赖。**
   - `IcsCalendar.build(events: List<Event>, calendarName: String, stamp: Instant = Instant.now()): String`
   - `IcsCalendar.TIMEZONE = "Asia/Shanghai"`
 
-- [ ] **Step 1: 写失败测试** `app/src/test/java/me/huanlin/gbuca/IcsCalendarTest.kt`
+- [x] **Step 1: 写失败测试** `app/src/test/java/me/huanlin/gbuca/IcsCalendarTest.kt`
 
 ```kotlin
 package me.huanlin.gbuca
@@ -153,12 +153,12 @@ class IcsCalendarTest {
 }
 ```
 
-- [ ] **Step 2: 运行测试确认失败**
+- [x] **Step 2: 运行测试确认失败**
 
 Run: `gradlew.bat :app:testDebugUnitTest --tests "me.huanlin.gbuca.IcsCalendarTest"`
 Expected: 编译失败 —— `Unresolved reference: IcsCalendar`
 
-- [ ] **Step 3: 实现**
+- [x] **Step 3: 实现**
 
 `app/src/main/java/me/huanlin/gbuca/domain/export/IcsCalendar.kt`：
 
@@ -301,12 +301,12 @@ object IcsCalendar {
 }
 ```
 
-- [ ] **Step 4: 运行测试确认通过**
+- [x] **Step 4: 运行测试确认通过**
 
 Run: `gradlew.bat :app:testDebugUnitTest --tests "me.huanlin.gbuca.IcsCalendarTest"`
 Expected: PASS（7 个用例）
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**
 
 ```bash
 git add app/src/main/java/me/huanlin/gbuca/domain/export/IcsCalendar.kt app/src/test/java/me/huanlin/gbuca/IcsCalendarTest.kt
@@ -329,7 +329,7 @@ git commit -m "feat(export): IcsCalendar — RFC 5545 序列化（折行/转义/
   - `CourseIcsExporter.calendarName(xnxq: String): String` → `GBU课表 {xnxq}`
   - `CourseIcsExporter.recurrence(start0: LocalDateTime, dates: List<LocalDate>): Pair<String?, List<LocalDateTime>>`（public，供测试）
 
-- [ ] **Step 1: 写失败测试** `app/src/test/java/me/huanlin/gbuca/CourseIcsExporterTest.kt`
+- [x] **Step 1: 写失败测试** `app/src/test/java/me/huanlin/gbuca/CourseIcsExporterTest.kt`
 
 ```kotlin
 package me.huanlin.gbuca
@@ -454,12 +454,12 @@ class CourseIcsExporterTest {
 }
 ```
 
-- [ ] **Step 2: 运行测试确认失败**
+- [x] **Step 2: 运行测试确认失败**
 
 Run: `gradlew.bat :app:testDebugUnitTest --tests "me.huanlin.gbuca.CourseIcsExporterTest"`
 Expected: 编译失败 —— `Unresolved reference: CourseIcsExporter`
 
-- [ ] **Step 3: 实现**
+- [x] **Step 3: 实现**
 
 `app/src/main/java/me/huanlin/gbuca/domain/export/CourseIcsExporter.kt`：
 
@@ -566,12 +566,12 @@ object CourseIcsExporter {
 }
 ```
 
-- [ ] **Step 4: 运行测试确认通过**
+- [x] **Step 4: 运行测试确认通过**
 
 Run: `gradlew.bat :app:testDebugUnitTest --tests "me.huanlin.gbuca.CourseIcsExporterTest"`
 Expected: PASS（10 个用例）
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**
 
 ```bash
 git add app/src/main/java/me/huanlin/gbuca/domain/export/CourseIcsExporter.kt app/src/test/java/me/huanlin/gbuca/CourseIcsExporterTest.kt
@@ -598,7 +598,7 @@ git commit -m "feat(export): CourseIcsExporter — 周次→RRULE/RDATE、稳定
   - `fun shareIntent(content: String, fileName: String): Intent`
   - `GbuCaApp.icsExport: IcsExportManager`
 
-- [ ] **Step 1: 实现 IcsExportManager**
+- [x] **Step 1: 实现 IcsExportManager**
 
 ```kotlin
 package me.huanlin.gbuca.data.export
@@ -664,7 +664,7 @@ class IcsExportManager(
 }
 ```
 
-- [ ] **Step 2: 新建 `app/src/main/res/xml/file_paths.xml`**
+- [x] **Step 2: 新建 `app/src/main/res/xml/file_paths.xml`**
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -673,7 +673,7 @@ class IcsExportManager(
 </paths>
 ```
 
-- [ ] **Step 3: 注册 FileProvider**
+- [x] **Step 3: 注册 FileProvider**
 
 在 `AndroidManifest.xml` 的 `</application>` 之前插入：
 
@@ -689,19 +689,19 @@ class IcsExportManager(
         </provider>
 ```
 
-- [ ] **Step 4: 在 `GbuCaApp` 中构造**
+- [x] **Step 4: 在 `GbuCaApp` 中构造**
 
 - 新增字段：`lateinit var icsExport: IcsExportManager` + `private set`
 - `onCreate` 中 `repo = ...` 之后追加：
   `icsExport = IcsExportManager(this, repo, settings)`
 - 新增 import：`me.huanlin.gbuca.data.export.IcsExportManager`
 
-- [ ] **Step 5: 编译验证**
+- [x] **Step 5: 编译验证**
 
 Run: `gradlew.bat :app:compileDebugKotlin`
 Expected: BUILD SUCCESSFUL
 
-- [ ] **Step 6: 提交**
+- [x] **Step 6: 提交**
 
 ```bash
 git add app/src/main/java/me/huanlin/gbuca/data/export/IcsExportManager.kt app/src/main/res/xml/file_paths.xml app/src/main/AndroidManifest.xml app/src/main/java/me/huanlin/gbuca/GbuCaApp.kt
@@ -725,7 +725,7 @@ git commit -m "feat(export): IcsExportManager + FileProvider（SAF 写文件 / �
   - `AppViewModel.shareIcs(onIntent: (Intent) -> Unit)`
   - `AppViewModel.showMessage(message: String)`
 
-- [ ] **Step 1: strings.xml 新增文案**（追加到「设置」区块）
+- [x] **Step 1: strings.xml 新增文案**（追加到「设置」区块）
 
 ```xml
     <string name="settings_section_export">导出到日历</string>
@@ -738,7 +738,7 @@ git commit -m "feat(export): IcsExportManager + FileProvider（SAF 写文件 / �
     <string name="msg_export_no_app">没有找到可处理日历的应用，请改用「导出 .ics 文件」</string>
 ```
 
-- [ ] **Step 2: AppViewModel 新增方法**（放在「服务器地址」区块之前）
+- [x] **Step 2: AppViewModel 新增方法**（放在「服务器地址」区块之前）
 
 ```kotlin
     // ---- 导出到日历 ----
@@ -798,7 +798,7 @@ git commit -m "feat(export): IcsExportManager + FileProvider（SAF 写文件 / �
     private object NoCourses : Exception()
 ```
 
-- [ ] **Step 3: SettingsScreen 新增分组**
+- [x] **Step 3: SettingsScreen 新增分组**
 
 在「学期配置」分组之后、「关于」分组之前插入：
 
@@ -840,12 +840,12 @@ git commit -m "feat(export): IcsExportManager + FileProvider（SAF 写文件 / �
 新增 import：`androidx.activity.result.contract.ActivityResultContracts`（`Intent`、`Row`、`Arrangement`、
 `OutlinedButton`、`rememberLauncherForActivityResult` 已存在）。
 
-- [ ] **Step 4: 编译 + 单测**
+- [x] **Step 4: 编译 + 单测**
 
 Run: `gradlew.bat :app:testDebugUnitTest :app:compileDebugKotlin`
 Expected: BUILD SUCCESSFUL
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**
 
 ```bash
 git add app/src/main/res/values/strings.xml app/src/main/java/me/huanlin/gbuca/ui/AppViewModel.kt app/src/main/java/me/huanlin/gbuca/ui/SettingsScreen.kt
@@ -859,12 +859,12 @@ git commit -m "feat(export): 设置页「导出到日历」分组（SAF 保存 +
 **Files:**
 - Modify: `README.md`（功能列表新增一条）
 
-- [ ] **Step 1: 全量单测 + 调试构建**
+- [x] **Step 1: 全量单测 + 调试构建**
 
 Run: `gradlew.bat :app:testDebugUnitTest :app:assembleDebug`
 Expected: BUILD SUCCESSFUL，所有单测通过（含既有 `ScheduleParserTest`、`HostNormalizerTest`）
 
-- [ ] **Step 2: README 功能列表新增**
+- [x] **Step 2: README 功能列表新增**
 
 在「后台同步」之前插入一行：
 
@@ -872,7 +872,7 @@ Expected: BUILD SUCCESSFUL，所有单测通过（含既有 `ScheduleParserTest`
 - **导出到日历**：当前学期课表导出为 `.ics`（重复课次用 RRULE/RDATE，事件内提醒跟随设置），可保存到文件或直接分享给日历 App
 ```
 
-- [ ] **Step 3: 提交**
+- [x] **Step 3: 提交**
 
 ```bash
 git add README.md
