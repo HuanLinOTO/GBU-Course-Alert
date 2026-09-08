@@ -157,6 +157,27 @@ class AppViewModel : ViewModel() {
         // TimeGrid 在同步时已由 kbjclist 更新
     }
 
+    // ---- 服务器地址（OOBE / 设置页） ----
+
+    val jwxtHost: String get() = settings.jwxtHost
+    val iaaaHost: String get() = settings.iaaaHost
+
+    /** OOBE 完成：保存服务器地址（调用方已用 HostNormalizer 校验）。 */
+    fun completeSetup(jwxtHost: String, iaaaHost: String, onDone: () -> Unit) {
+        settings.jwxtHost = jwxtHost
+        settings.iaaaHost = iaaaHost
+        onDone()
+    }
+
+    /** 设置页修改服务器地址：清空旧域会话，随后自动重登并同步。 */
+    fun saveHosts(jwxtHost: String, iaaaHost: String) {
+        val changed = settings.jwxtHost != jwxtHost || settings.iaaaHost != iaaaHost
+        settings.jwxtHost = jwxtHost
+        settings.iaaaHost = iaaaHost
+        if (changed) app.cookieJar.clear()
+        sync()
+    }
+
     companion object {
         val Factory: ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")

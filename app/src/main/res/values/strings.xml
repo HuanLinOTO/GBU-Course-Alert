@@ -19,6 +19,15 @@
     <string name="login_button_in_progress">登录中…</string>
     <string name="login_open_web">触发验证码？使用网页登录</string>
 
+    <!-- OOBE 服务器配置向导 -->
+    <string name="setup_title">连接你的学校</string>
+    <string name="setup_subtitle">填写学校的教务系统与统一认证（iAAA）地址。\n具体地址请以学校公布的信息为准。</string>
+    <string name="setup_jwxt_label">教务系统地址</string>
+    <string name="setup_iaaa_label">统一认证（iAAA）地址</string>
+    <string name="setup_host_hint">jwxt.example.edu.cn</string>
+    <string name="setup_host_invalid">地址格式不正确，请填写如 jwxt.example.edu.cn 的域名</string>
+    <string name="setup_next">下一步</string>
+
     <!-- 今日页 -->
     <string name="today_title">今日课程</string>
     <string name="today_sync">同步</string>
@@ -70,6 +79,12 @@
 
     <!-- 设置 -->
     <string name="settings_title">设置</string>
+    <string name="settings_section_server">服务器</string>
+    <string name="settings_server_jwxt">教务系统：%1$s</string>
+    <string name="settings_server_iaaa">统一认证：%1$s</string>
+    <string name="settings_server_edit">修改服务器地址</string>
+    <string name="settings_server_unset">未配置</string>
+    <string name="common_cancel">取消</string>
     <string name="settings_section_account">账号</string>
     <string name="settings_password_keep">密码（留空保持不变）</string>
     <string name="settings_save_and_sync">保存并同步</string>

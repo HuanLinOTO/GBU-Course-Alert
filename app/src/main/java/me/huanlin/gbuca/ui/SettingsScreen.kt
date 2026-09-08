@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -55,6 +56,7 @@ import me.huanlin.gbuca.GbuCaApp
 import me.huanlin.gbuca.R
 import me.huanlin.gbuca.reminder.LiveUpdateNotifier
 import me.huanlin.gbuca.reminder.ReminderScheduler
+import me.huanlin.gbuca.data.remote.HostNormalizer
 import me.huanlin.gbuca.widget.TodayWidgetReceiver
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -90,6 +92,32 @@ fun SettingsScreen(
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         TopAppBar(title = { Text(stringResource(R.string.settings_title)) })
+
+        // ---- 服务器 ----
+        SectionTitle(stringResource(R.string.settings_section_server))
+        SettingsCard {
+            Text(
+                stringResource(
+                    R.string.settings_server_jwxt,
+                    vm.jwxtHost.ifBlank { stringResource(R.string.settings_server_unset) },
+                ),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            Text(
+                stringResource(
+                    R.string.settings_server_iaaa,
+                    vm.iaaaHost.ifBlank { stringResource(R.string.settings_server_unset) },
+                ),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            var editingServer by rememberSaveable { mutableStateOf(false) }
+            OutlinedButton(onClick = { editingServer = true }) {
+                Text(stringResource(R.string.settings_server_edit))
+            }
+            if (editingServer) {
+                ServerEditDialog(vm = vm, onDismiss = { editingServer = false })
+            }
+        }
 
         // ---- 账号 ----
         SectionTitle(stringResource(R.string.settings_section_account))
@@ -316,6 +344,57 @@ private fun SettingsCard(content: @Composable ColumnScope.() -> Unit) {
             content = content,
         )
     }
+}
+
+/** 服务器地址编辑对话框：与 OOBE 向导同一套校验（裸主机名，强制 https）。 */
+@Composable
+private fun ServerEditDialog(vm: AppViewModel, onDismiss: () -> Unit) {
+    var jwxt by rememberSaveable { mutableStateOf(vm.jwxtHost) }
+    var iaaa by rememberSaveable { mutableStateOf(vm.iaaaHost) }
+    val j = remember(jwxt) { HostNormalizer.normalize(jwxt) }
+    val i = remember(iaaa) { HostNormalizer.normalize(iaaa) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.settings_server_edit)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = jwxt,
+                    onValueChange = { jwxt = it },
+                    label = { Text(stringResource(R.string.setup_jwxt_label)) },
+                    placeholder = { Text(stringResource(R.string.setup_host_hint)) },
+                    singleLine = true,
+                    isError = jwxt.isNotBlank() && j == null,
+                    supportingText = {
+                        if (jwxt.isNotBlank() && j == null) Text(stringResource(R.string.setup_host_invalid))
+                    },
+                )
+                OutlinedTextField(
+                    value = iaaa,
+                    onValueChange = { iaaa = it },
+                    label = { Text(stringResource(R.string.setup_iaaa_label)) },
+                    placeholder = { Text(stringResource(R.string.setup_host_hint)) },
+                    singleLine = true,
+                    isError = iaaa.isNotBlank() && i == null,
+                    supportingText = { if (iaaa.isNotBlank() && i == null) Text(stringResource(R.string.setup_host_invalid)) },
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                enabled = j != null && i != null,
+                onClick = {
+                    val jHost = j ?: return@TextButton
+                    val iHost = i ?: return@TextButton
+                    vm.saveHosts(jHost, iHost)
+                    onDismiss()
+                },
+            ) { Text(stringResource(R.string.settings_save)) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
+        },
+    )
 }
 
 @Composable

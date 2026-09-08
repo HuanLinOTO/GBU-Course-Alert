@@ -22,15 +22,19 @@ class MainActivity : ComponentActivity() {
         setContent {
             GbuCaTheme {
                 val vm: AppViewModel = viewModel(factory = AppViewModel.Factory)
+                // OOBE 门控：服务器地址未配置（首次使用或升级后）先走配置向导
+                var needsSetup by rememberSaveable {
+                    mutableStateOf(app.settings.jwxtHost.isBlank() || app.settings.iaaaHost.isBlank())
+                }
                 var loggedIn by rememberSaveable { mutableStateOf(app.creds.username != null) }
-                if (loggedIn) {
-                    AppNavHost(
+                when {
+                    needsSetup -> SetupScreen(vm) { needsSetup = false }
+                    loggedIn -> AppNavHost(
                         vm = vm,
                         onOpenWebLogin = { WebLoginActivity.start(this) },
                         reminderScheduler = app.reminderScheduler,
                     )
-                } else {
-                    LoginScreen(
+                    else -> LoginScreen(
                         vm = vm,
                         onOpenWebLogin = { WebLoginActivity.start(this) },
                         onLoggedIn = { loggedIn = true },
