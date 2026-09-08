@@ -45,6 +45,26 @@ class AppViewModel : ViewModel() {
         if (settings.remindersEnabled) app.reminderScheduler.rescheduleAsync()
     }
 
+    /** 「今日休息」是否对今天生效；跨零点或从后台返回时由 [refreshResting] 重新判定。 */
+    private val _resting = MutableStateFlow(settings.isRestingToday())
+    val resting: StateFlow<Boolean> = _resting
+
+    /**
+     * 切换「今日休息」：开启即取消当天全部提醒（精确闹钟 + Live Update 常驻倒计时）；
+     * 关闭即按当前设置重排。仅对当日生效，跨零点自动失效。
+     */
+    fun setResting(on: Boolean) {
+        settings.restDay = if (on) java.time.LocalDate.now().toEpochDay() else null
+        _resting.value = on
+        if (on) app.reminderScheduler.cancelAll() else app.reminderScheduler.rescheduleAsync()
+        viewModelScope.launch { me.huanlin.gbuca.widget.TodayWidgetReceiver.refreshAll(app) }
+    }
+
+    /** 重新判定休息状态（跨零点后 / 从后台回到前台）。 */
+    fun refreshResting() {
+        _resting.value = settings.isRestingToday()
+    }
+
     /** 当前选中的 xnxq；null = 自动（当前学期）。 */
     val selectedXnxq: StateFlow<String?> = MutableStateFlow(app.settings.selectedXnxq)
 
