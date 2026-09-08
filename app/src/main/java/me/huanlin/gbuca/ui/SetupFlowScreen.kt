@@ -214,11 +214,18 @@ private fun AddressStep(
     val focus = LocalFocusManager.current
     val scope = rememberCoroutineScope()
 
+    /** 真正离开地址步时才落盘，避免「探测失败后放弃」把错地址写进配置。 */
+    fun advance() {
+        val j = jHost ?: return
+        val i = iHost ?: return
+        vm.completeSetup(j, i)
+        onNext()
+    }
+
     fun probeAndAdvance() {
         val j = jHost ?: return
         val i = iHost ?: return
         focus.clearFocus()
-        vm.completeSetup(j, i)
         scope.launch {
             probing = true
             failure = null
@@ -229,7 +236,7 @@ private fun AddressStep(
             }
             probing = false
             val unreachable = results.filterIsInstance<ProbeResult.Unreachable>().firstOrNull()
-            if (unreachable == null) onNext() else failure = unreachable.failure
+            if (unreachable == null) advance() else failure = unreachable.failure
         }
     }
 
@@ -293,7 +300,7 @@ private fun AddressStep(
         ),
         nextEnabled = jHost != null && iHost != null,
         busy = probing,
-        onNext = { if (failure != null) onNext() else probeAndAdvance() },
+        onNext = { if (failure != null) advance() else probeAndAdvance() },
     )
 }
 
