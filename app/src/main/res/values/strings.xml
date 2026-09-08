@@ -156,6 +156,9 @@
     <string name="settings_last_sync">上次同步：%1$s</string>
 
     <!-- 导出到日历 -->
+    <string name="settings_section_wizard">向导</string>
+    <string name="settings_wizard_hint">重新走一遍首次使用向导，逐步确认服务器地址、登录、权限与提醒设置。</string>
+    <string name="settings_rerun_wizard">重新运行向导</string>
     <string name="settings_section_export">导出到日历</string>
     <string name="settings_export_hint">把当前学期课表导出为 .ics 文件，可导入系统日历（Google 日历、Apple 日历、Outlook 等）。\n重复课次以「每周重复」事件表示，可整条编辑或删除；事件内提醒跟随上方「提前提醒时间」。</string>
     <string name="settings_export_file">导出 .ics 文件</string>

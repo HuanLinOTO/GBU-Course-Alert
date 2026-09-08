@@ -61,6 +61,7 @@ import java.time.format.DateTimeFormatter
 fun SettingsScreen(
     reminderScheduler: ReminderScheduler,
     vm: AppViewModel,
+    onRerunOobe: () -> Unit,
 ) {
     val context = LocalContext.current
     val ui by vm.ui.collectAsState()
@@ -218,6 +219,19 @@ fun SettingsScreen(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+        }
+
+        // ---- 向导 ----
+        SectionTitle(stringResource(R.string.settings_section_wizard))
+        SettingsCard {
+            Text(
+                stringResource(R.string.settings_wizard_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            OutlinedButton(onClick = onRerunOobe) {
+                Text(stringResource(R.string.settings_rerun_wizard))
+            }
         }
 
         // ---- 导出到日历 ----

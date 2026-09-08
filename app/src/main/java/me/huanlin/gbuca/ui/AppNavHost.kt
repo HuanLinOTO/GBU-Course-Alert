@@ -34,6 +34,7 @@ private const val PUSH_MS = 300
 fun AppNavHost(
     vm: AppViewModel,
     onOpenWebLogin: () -> Unit,
+    onRerunOobe: () -> Unit,
     reminderScheduler: ReminderScheduler,
 ) {
     val nav = rememberNavController()
@@ -59,6 +60,7 @@ fun AppNavHost(
                 vm = vm,
                 onOpenCourse = { rwh -> nav.navigate("course/$rwh") },
                 onOpenWebLogin = onOpenWebLogin,
+                onRerunOobe = onRerunOobe,
                 reminderScheduler = reminderScheduler,
             )
         }
@@ -75,6 +77,7 @@ private fun TabsScreen(
     vm: AppViewModel,
     onOpenCourse: (String) -> Unit,
     onOpenWebLogin: () -> Unit,
+    onRerunOobe: () -> Unit,
     reminderScheduler: ReminderScheduler,
 ) {
     val scope = rememberCoroutineScope()
@@ -108,7 +111,11 @@ private fun TabsScreen(
                     vm = vm,
                 )
                 1 -> WeekScreen(onOpenCourse = onOpenCourse, vm = vm)
-                2 -> SettingsScreen(reminderScheduler = reminderScheduler, vm = vm)
+                2 -> SettingsScreen(
+                    reminderScheduler = reminderScheduler,
+                    vm = vm,
+                    onRerunOobe = onRerunOobe,
+                )
             }
         }
     }

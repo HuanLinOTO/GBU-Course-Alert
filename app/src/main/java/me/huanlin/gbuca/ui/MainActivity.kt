@@ -10,6 +10,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.viewmodel.compose.viewModel
 import me.huanlin.gbuca.GbuCaApp
+import me.huanlin.gbuca.domain.oobe.OobeStep
 import me.huanlin.gbuca.sync.SyncWorker
 import me.huanlin.gbuca.ui.theme.GbuCaTheme
 
@@ -32,6 +33,7 @@ class MainActivity : ComponentActivity() {
                         AppNavHost(
                             vm = vm,
                             onOpenWebLogin = { WebLoginActivity.start(this) },
+                            onRerunOobe = { oobeStart = OobeStep.Address },
                             reminderScheduler = app.reminderScheduler,
                         )
                     } else {
