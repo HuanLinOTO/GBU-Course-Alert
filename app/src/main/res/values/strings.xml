@@ -127,6 +127,7 @@
     <string name="error_session_expired">会话已过期，请重新同步</string>
     <string name="error_network">网络错误，请检查连接</string>
     <string name="error_sync_failed">同步失败：%1$s</string>
+    <string name="error_server_unset">请先填写教务系统与认证地址</string>
 
     <!-- 提醒通知 -->
     <string name="notif_class_title">即将上课 · %1$s</string>

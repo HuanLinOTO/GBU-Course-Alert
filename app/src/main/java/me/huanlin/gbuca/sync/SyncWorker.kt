@@ -19,6 +19,8 @@ class SyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
 
     override suspend fun doWork(): Result {
         val app = applicationContext as GbuCaApp
+        // OOBE 未完成（地址未配置）时不做任何网络访问，直接视为成功，避免无意义的失败重试
+        if (app.settings.jwxtHost.isBlank() || app.settings.iaaaHost.isBlank()) return Result.success()
         return try {
             val xnxq = app.settings.selectedXnxq ?: app.client.fallbackXnxq().third
             app.repo.sync(xnxq)

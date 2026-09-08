@@ -62,33 +62,36 @@ class AppViewModel : ViewModel() {
     val ui = MutableStateFlow(UiState())
 
     fun sync() {
+        if (!serverConfigured) {
+            ui.value = ui.value.copy(syncing = false, message = app.getString(R.string.error_server_unset))
+            return
+        }
         viewModelScope.launch {
             ui.value = ui.value.copy(syncing = true, message = null, calibrateOk = null)
-            val result = runCatching { repo.sync(xnxq) }
-            ui.value = when {
-                result.isSuccess -> {
-                    me.huanlin.gbuca.widget.TodayWidgetReceiver.refreshAll(app)
-                    ui.value.copy(
-                        syncing = false,
-                        message = app.getString(R.string.msg_synced_courses, result.getOrThrow().courseCount),
-                    )
-                }
-                else -> ui.value.copy(
+            val result = runCatchingNonCancellation { repo.sync(xnxq) }
+            val e = result.exceptionOrNull()
+            ui.value = if (e == null) {
+                me.huanlin.gbuca.widget.TodayWidgetReceiver.refreshAll(app)
+                ui.value.copy(
                     syncing = false,
-                    message = friendlyError(result.exceptionOrNull()),
-                    needWebLogin = result.exceptionOrNull() is GbuException.NeedCaptcha ||
-                        result.exceptionOrNull() is GbuException.NeedSms,
+                    message = app.getString(R.string.msg_synced_courses, result.getOrThrow().courseCount),
+                )
+            } else {
+                ui.value.copy(
+                    syncing = false,
+                    message = friendlyError(e),
+                    needWebLogin = e is GbuException.NeedCaptcha || e is GbuException.NeedSms,
                 )
             }
             app.reminderScheduler.rescheduleAsync()
         }
     }
 
-    /** 首次登录：先认证，成功才保存凭据并同步课表。 */
+    /** 首次登录：先认证，成功才保存凭据并同步课表。成功时不产生任何提示消息。 */
     fun login(u: String, p: String, onSuccess: () -> Unit) {
         viewModelScope.launch {
             ui.value = ui.value.copy(syncing = true, message = null, needWebLogin = false, calibrateOk = null)
-            val result = runCatching {
+            val result = runCatchingNonCancellation {
                 app.client.login(u, p)
                 app.creds.save(u, p)
                 repo.sync(xnxq)
@@ -96,10 +99,11 @@ class AppViewModel : ViewModel() {
             val e = result.exceptionOrNull()
             ui.value = ui.value.copy(
                 syncing = false,
-                message = friendlyError(e),
+                // 仅失败时提示：成功时若仍调 friendlyError(null) 会渲染成「同步失败：?」
+                message = e?.let { friendlyError(it) },
                 needWebLogin = e is GbuException.NeedCaptcha || e is GbuException.NeedSms,
             )
-            if (result.isSuccess) {
+            if (e == null) {
                 me.huanlin.gbuca.widget.TodayWidgetReceiver.refreshAll(app)
                 app.reminderScheduler.rescheduleAsync()
                 onSuccess()
@@ -107,13 +111,28 @@ class AppViewModel : ViewModel() {
         }
     }
 
-    private fun friendlyError(e: Throwable?): String = when (e) {
-        is GbuException.BadCredentials -> app.getString(R.string.error_login_failed, e.message)
+    /** runCatching，但协程取消原样抛出：取消不是业务失败，不能被当成错误提示。 */
+    private inline fun <T> runCatchingNonCancellation(block: () -> T): Result<T> =
+        try {
+            Result.success(block())
+        } catch (c: kotlinx.coroutines.CancellationException) {
+            throw c
+        } catch (t: Throwable) {
+            Result.failure(t)
+        }
+
+    /** 异常 → 用户可读文案；永不为空、永不出现 "?"。 */
+    private fun friendlyError(e: Throwable): String = when (e) {
+        is GbuException.BadCredentials -> app.getString(R.string.error_login_failed, e.message0)
         is GbuException.NeedCaptcha -> app.getString(R.string.error_need_captcha)
         is GbuException.NeedSms -> app.getString(R.string.error_need_sms)
         is GbuException.SessionExpired -> app.getString(R.string.error_session_expired)
         is GbuException.Network -> app.getString(R.string.error_network)
-        else -> app.getString(R.string.error_sync_failed, e?.message ?: "?")
+        is java.io.IOException -> app.getString(R.string.error_network)
+        else -> app.getString(
+            R.string.error_sync_failed,
+            e.message?.takeIf { it.isNotBlank() } ?: e.javaClass.simpleName,
+        )
     }
 
     fun saveCredentials(u: String, p: String) {
@@ -131,9 +150,13 @@ class AppViewModel : ViewModel() {
 
     /** 手动从教务系统校准「第 1 周周一」（清除手动设置并强制生效；无会话先自动登录）。 */
     fun calibrateSemesterStartFromServer() {
+        if (!serverConfigured) {
+            ui.value = ui.value.copy(message = app.getString(R.string.error_server_unset))
+            return
+        }
         viewModelScope.launch {
             ui.value = ui.value.copy(syncing = true, message = null, calibrateOk = null)
-            val result = runCatching { repo.calibrateSemesterStart(xnxq, force = true) }
+            val result = runCatchingNonCancellation { repo.calibrateSemesterStart(xnxq, force = true) }
             val date = result.getOrNull()
             val e = result.exceptionOrNull()
             ui.value = ui.value.copy(
@@ -161,6 +184,10 @@ class AppViewModel : ViewModel() {
 
     val jwxtHost: String get() = settings.jwxtHost
     val iaaaHost: String get() = settings.iaaaHost
+
+    /** OOBE 是否已完成（两个地址均已配置）；未完成时不做任何网络访问。 */
+    val serverConfigured: Boolean
+        get() = settings.jwxtHost.isNotBlank() && settings.iaaaHost.isNotBlank()
 
     /** OOBE 完成：保存服务器地址（调用方已用 HostNormalizer 校验）。 */
     fun completeSetup(jwxtHost: String, iaaaHost: String, onDone: () -> Unit) {
