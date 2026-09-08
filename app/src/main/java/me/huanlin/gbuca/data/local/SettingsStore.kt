@@ -42,6 +42,16 @@ class SettingsStore(context: Context) {
         get() = prefs.getString("selected_xnxq", null)
         set(v) = prefs.edit { putString("selected_xnxq", v) }
 
+    /** 教务系统主机名（裸域名，OOBE 填写）；空 = 未配置。 */
+    var jwxtHost: String
+        get() = prefs.getString("jwxt_host", null)?.trim().orEmpty()
+        set(v) = prefs.edit { putString("jwxt_host", v.trim()) }
+
+    /** 统一认证（iAAA）主机名（裸域名，OOBE 填写）；空 = 未配置。 */
+    var iaaaHost: String
+        get() = prefs.getString("iaaa_host", null)?.trim().orEmpty()
+        set(v) = prefs.edit { putString("iaaa_host", v.trim()) }
+
     var reminderMinutes: Int
         get() = prefs.getInt("reminder_minutes", 15)
         set(v) = prefs.edit { putInt("reminder_minutes", v.coerceIn(0, 120)) }

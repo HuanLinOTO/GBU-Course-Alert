@@ -14,27 +14,34 @@ import okhttp3.Response
 import java.util.concurrent.TimeUnit
 
 /**
- * GBU 教务客户端：iAAA 统一认证登录 + 教务接口。
+ * GBU 教务客户端：统一认证（iAAA）登录 + 教务接口。
  *
+ * 服务器地址由用户在 OOBE 中配置（[Endpoints]），每次请求现场解析。
  * 登录链路：
- *  ① POST https://iaaa.example.edu.cn/iaaa/oauthlogin.do （明文表单）→ token
- *  ② GET  https://jwxt.example.edu.cn/oauth/login/code?_rand&token → 302 → 建立教务会话 Cookie
+ *  ① POST {iaaa}/iaaa/oauthlogin.do （明文表单）→ token
+ *  ② GET  {jwxt}/oauth/login/code?_rand&token → 302 → 建立教务会话 Cookie
  */
-class GbuClient(private val cookieJar: PersistentCookieJar) {
+class GbuClient(
+    private val cookieJar: PersistentCookieJar,
+    private val endpointsProvider: () -> Endpoints,
+) {
 
     companion object {
-        const val IAAA_BASE = "https://iaaa.example.edu.cn/iaaa/"
-        const val JWXT_BASE = "https://jwxt.example.edu.cn"
+        /** 认证中心中教务系统的 OAuth 应用标识（非域名，保持常量）。 */
         const val APP_ID = "gbu_jwxt"
-        const val REDIR_URL = "https://jwxt.example.edu.cn/oauth/login/code"
 
-        /** WebView 兜底登录入口。 */
-        fun webLoginUrl(): String =
-            "https://iaaa.example.edu.cn/iaaa/oauth.jsp?appID=$APP_ID&redirectURL=" +
-                java.net.URLEncoder.encode(REDIR_URL, "UTF-8") + "&appName=%E6%95%99%E5%8A%A1%E7%B3%BB%E7%BB%9F"
-
-        private val UA =
+        private const val UA =
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36"
+    }
+
+    /** 当前服务端点：每次访问取最新配置，域名修改即时生效。 */
+    val endpoints: Endpoints get() = endpointsProvider()
+
+    /** WebView 兜底登录入口。 */
+    fun webLoginUrl(): String {
+        val e = endpoints
+        return "https://${e.iaaaHost}/iaaa/oauth.jsp?appID=$APP_ID&redirectURL=" +
+            java.net.URLEncoder.encode(e.redirUrl, "UTF-8") + "&appName=%E6%95%99%E5%8A%A1%E7%B3%BB%E7%BB%9F"
     }
 
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
@@ -51,7 +58,7 @@ class GbuClient(private val cookieJar: PersistentCookieJar) {
                     .header("User-Agent", UA)
                     .header("X-Requested-With", "XMLHttpRequest")
                     .header("Accept", "application/json, text/javascript, */*; q=0.01")
-                    .header("Referer", "$JWXT_BASE/xsxk/zyxk")
+                    .header("Referer", "${endpoints.jwxtBase}/xsxk/zyxk")
                     .build()
             )
         }
@@ -76,9 +83,9 @@ class GbuClient(private val cookieJar: PersistentCookieJar) {
             .add("randCode", "")
             .add("smsCode", "")
             .add("otpCode", "")
-            .add("redirUrl", REDIR_URL)
+            .add("redirUrl", endpoints.redirUrl)
             .build()
-        val req = Request.Builder().url("${IAAA_BASE}oauthlogin.do").post(form).build()
+        val req = Request.Builder().url("${endpoints.iaaaBase}oauthlogin.do").post(form).build()
 
         val body = apiClient.newCall(req).execute().use { resp ->
             resp.body?.string() ?: throw GbuException.Network(java.io.IOException("空响应"))
@@ -108,7 +115,7 @@ class GbuClient(private val cookieJar: PersistentCookieJar) {
 
         val rand = Math.random()
         val codeReq = Request.Builder()
-            .url("$JWXT_BASE/oauth/login/code?_rand=$rand&token=$token")
+            .url("${endpoints.jwxtBase}/oauth/login/code?_rand=$rand&token=$token")
             .get()
             .build()
         loginClient.newCall(codeReq).execute().use { resp ->
@@ -131,13 +138,13 @@ class GbuClient(private val cookieJar: PersistentCookieJar) {
                 .add("pageNum", pageNum.toString())
                 .add("pageSize", pageSize.toString())
                 .build()
-            val req = Request.Builder().url("$JWXT_BASE/Xsxk/queryYxkc").post(form).build()
+            val req = Request.Builder().url("${endpoints.jwxtBase}/Xsxk/queryYxkc").post(form).build()
             apiClient.newCall(req).execute().use { resp -> parseApiResponse(resp) { json.decodeFromString(it) } }
         }
 
     suspend fun queryXnxq(): String = withContext(Dispatchers.IO) {
         val req = Request.Builder()
-            .url("$JWXT_BASE/component/queryXnxq")
+            .url("${endpoints.jwxtBase}/component/queryXnxq")
             .post(FormBody.Builder().build())
             .build()
         apiClient.newCall(req).execute().use { resp -> parseApiResponse(resp) { it } }
@@ -146,7 +153,7 @@ class GbuClient(private val cookieJar: PersistentCookieJar) {
     /** 日期 → 学期周次。返回 (xn, xq, zc)；zc：未开学为 0，第 1 周 = 1。 */
     suspend fun queryXnxqZc(rq: java.time.LocalDate): Triple<String, String, Int>? = withContext(Dispatchers.IO) {
         val req = Request.Builder()
-            .url("$JWXT_BASE/component/getXnxqByRq?rq=$rq")
+            .url("${endpoints.jwxtBase}/component/getXnxqByRq?rq=$rq")
             .get()
             .build()
         apiClient.newCall(req).execute().use { resp ->

@@ -3,6 +3,7 @@ package me.huanlin.gbuca.ui
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.webkit.CookieManager
 import android.webkit.WebResourceRequest
@@ -11,11 +12,11 @@ import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import me.huanlin.gbuca.GbuCaApp
-import me.huanlin.gbuca.data.remote.GbuClient
 
 /**
- * WebView SSO 兜底登录：加载 iAAA oauth.jsp，用户完成登录（可含验证码）后，
- * CookieManager 中出现 jwxt JSESSIONID → 注入持久 CookieJar → 返回。
+ * WebView SSO 兜底登录：加载认证中心 oauth.jsp，用户完成登录（可含验证码）后，
+ * CookieManager 中出现教务会话 Cookie → 注入持久 CookieJar → 返回。
+ * 地址取自用户配置（app.client.endpoints），不内置任何学校域名。
  */
 class WebLoginActivity : ComponentActivity() {
 
@@ -53,12 +54,13 @@ class WebLoginActivity : ComponentActivity() {
             }
 
             override fun onPageFinished(view: WebView, url: String) {
-                if (!url.contains("jwxt.example.edu.cn")) return
+                val host = GbuCaApp.instance.client.endpoints.jwxtHost
+                if (Uri.parse(url).host != host) return
                 val cm = CookieManager.getInstance()
-                val cookies = cm.getCookie("https://jwxt.example.edu.cn") ?: return
+                val cookies = cm.getCookie("https://$host") ?: return
                 if (Regex("(SESSION|JSESSIONID)=", RegexOption.IGNORE_CASE).containsMatchIn(cookies)) {
                     // 系统 Cookie → okhttp CookieJar
-                    app.cookieJar.inject("https://jwxt.example.edu.cn/", cookies.split(";"))
+                    app.cookieJar.inject("https://$host/", cookies.split(";"))
                     setResult(RESULT_OK)
                     finish()
                 }
@@ -67,7 +69,7 @@ class WebLoginActivity : ComponentActivity() {
         if (savedInstanceState != null) {
             webView.restoreState(savedInstanceState)
         } else {
-            webView.loadUrl(GbuClient.webLoginUrl())
+            webView.loadUrl(app.client.webLoginUrl())
         }
     }
 

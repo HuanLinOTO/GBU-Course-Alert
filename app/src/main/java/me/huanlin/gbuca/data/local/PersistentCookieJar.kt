@@ -15,8 +15,27 @@ import java.util.concurrent.ConcurrentHashMap
 /**
  * 持久化 CookieJar：内存 + 磁盘（JSON 文件）。
  * 支持 WebView 登录后外部注入 Cookie（[inject]）。
+ * 会话归属按用户配置的教务/认证域名判定（[jwxtHost] / [iaaaHost] 提供者）。
  */
-class PersistentCookieJar(private val storeFile: File) : CookieJar {
+class PersistentCookieJar(
+    private val storeFile: File,
+    private val jwxtHost: () -> String,
+    private val iaaaHost: () -> String,
+) : CookieJar {
+
+    /** domain 是否属于当前配置的教务主机（Cookie domain 可能带前导点）。 */
+    private fun matchesJwxt(domain: String): Boolean {
+        val host = jwxtHost()
+        if (host.isEmpty()) return false
+        return domain.removePrefix(".").removeSuffix(".") == host
+    }
+
+    /** 存储键（"domain|path|name"）是否属于当前配置的认证主机。 */
+    private fun matchesIaaaKey(key: String): Boolean {
+        val host = iaaaHost()
+        if (host.isEmpty()) return false
+        return key.substringBefore('|').removePrefix(".").removeSuffix(".") == host
+    }
 
     @Serializable
     private data class CookieDto(
@@ -83,7 +102,7 @@ class PersistentCookieJar(private val storeFile: File) : CookieJar {
             }
         }
         persist()
-        if (cookies.any { it.domain.contains("jwxt") && (it.name.equals("SESSION", true) || it.name.equals("JSESSIONID", true)) }) {
+        if (cookies.any { matchesJwxt(it.domain) && (it.name.equals("SESSION", true) || it.name.equals("JSESSIONID", true)) }) {
             webLoginListener?.invoke()
         }
     }
@@ -99,17 +118,17 @@ class PersistentCookieJar(private val storeFile: File) : CookieJar {
         val now = System.currentTimeMillis()
         synchronized(storage) {
             return storage.values.flatten().any {
-                it.domain.contains("jwxt") &&
+                matchesJwxt(it.domain) &&
                     (it.name.equals("SESSION", true) || it.name.equals("JSESSIONID", true)) &&
                     it.expiresAt > now
             }
         }
     }
 
-    /** 登录前清除 iAAA 会话 Cookie：旧会话状态会导致服务端 "操作失败:null"。 */
+    /** 登录前清除认证（iAAA）会话 Cookie：旧会话状态会导致服务端 "操作失败:null"。 */
     fun clearIaaa() {
         synchronized(storage) {
-            storage.keys.filter { it.startsWith("iaaa.example.edu.cn") }.forEach { storage.remove(it) }
+            storage.keys.filter { matchesIaaaKey(it) }.forEach { storage.remove(it) }
         }
         persist()
     }
