@@ -52,6 +52,11 @@ class SettingsStore(context: Context) {
         get() = prefs.getString("iaaa_host", null)?.trim().orEmpty()
         set(v) = prefs.edit { putString("iaaa_host", v.trim()) }
 
+    /** OOBE 是否已完整走过（含权限与提醒步骤）；老安装由门控判定为已完成，不写该标记。 */
+    var oobeDone: Boolean
+        get() = prefs.getBoolean("oobe_done", false)
+        set(v) = prefs.edit { putBoolean("oobe_done", v) }
+
     var reminderMinutes: Int
         get() = prefs.getInt("reminder_minutes", 15)
         set(v) = prefs.edit { putInt("reminder_minutes", v.coerceIn(0, 120)) }

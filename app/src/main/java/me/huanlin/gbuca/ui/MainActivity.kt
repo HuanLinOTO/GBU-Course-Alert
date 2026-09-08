@@ -22,22 +22,34 @@ class MainActivity : ComponentActivity() {
         setContent {
             GbuCaTheme {
                 val vm: AppViewModel = viewModel(factory = AppViewModel.Factory)
-                // OOBE 门控：服务器地址未配置（首次使用或升级后）先走配置向导
-                var needsSetup by rememberSaveable {
-                    mutableStateOf(app.settings.jwxtHost.isBlank() || app.settings.iaaaHost.isBlank())
+                // null = 不在向导中；非 null = 向导入口步（老用户已配置+已登录时为 null）
+                var oobeStart by rememberSaveable {
+                    mutableStateOf(if (vm.needsOobe) vm.oobeStartStep() else null)
                 }
                 var loggedIn by rememberSaveable { mutableStateOf(app.creds.username != null) }
-                when {
-                    needsSetup -> SetupScreen(vm) { needsSetup = false }
-                    loggedIn -> AppNavHost(
+                when (val start = oobeStart) {
+                    null -> if (loggedIn) {
+                        AppNavHost(
+                            vm = vm,
+                            onOpenWebLogin = { WebLoginActivity.start(this) },
+                            reminderScheduler = app.reminderScheduler,
+                        )
+                    } else {
+                        LoginScreen(
+                            vm = vm,
+                            onOpenWebLogin = { WebLoginActivity.start(this) },
+                            onLoggedIn = { loggedIn = true },
+                        )
+                    }
+                    else -> SetupFlowScreen(
                         vm = vm,
-                        onOpenWebLogin = { WebLoginActivity.start(this) },
                         reminderScheduler = app.reminderScheduler,
-                    )
-                    else -> LoginScreen(
-                        vm = vm,
+                        startStep = start,
                         onOpenWebLogin = { WebLoginActivity.start(this) },
-                        onLoggedIn = { loggedIn = true },
+                        onFinished = {
+                            oobeStart = null
+                            loggedIn = app.creds.username != null
+                        },
                     )
                 }
             }

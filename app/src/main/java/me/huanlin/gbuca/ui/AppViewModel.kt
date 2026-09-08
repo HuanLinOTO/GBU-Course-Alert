@@ -16,6 +16,8 @@ import me.huanlin.gbuca.data.GbuException
 import me.huanlin.gbuca.data.repo.CourseRepository
 import me.huanlin.gbuca.domain.logic.ScheduleLogic
 import me.huanlin.gbuca.domain.model.TermData
+import me.huanlin.gbuca.domain.oobe.OobeFlow
+import me.huanlin.gbuca.domain.oobe.OobeStep
 import me.huanlin.gbuca.domain.time.TimeGrid
 
 class AppViewModel : ViewModel() {
@@ -244,7 +246,7 @@ class AppViewModel : ViewModel() {
 
     private object NoCourses : Exception()
 
-    // ---- 服务器地址（OOBE / 设置页） ----
+    // ---- 服务器地址与 OOBE（向导 / 设置页） ----
 
     val jwxtHost: String get() = settings.jwxtHost
     val iaaaHost: String get() = settings.iaaaHost
@@ -253,11 +255,30 @@ class AppViewModel : ViewModel() {
     val serverConfigured: Boolean
         get() = settings.jwxtHost.isNotBlank() && settings.iaaaHost.isNotBlank()
 
-    /** OOBE 完成：保存服务器地址（调用方已用 HostNormalizer 校验）。 */
-    fun completeSetup(jwxtHost: String, iaaaHost: String, onDone: () -> Unit) {
+    /** 已保存的学号；无凭据时 null。 */
+    val credentialUsername: String? get() = app.creds.username
+
+    val hasCredentials: Boolean get() = app.creds.username != null
+
+    /**
+     * 是否需要走 OOBE 向导。
+     * 已配置地址且已有凭据的既有安装（v0.0.5 及以前）静默视为完成，不打扰。
+     */
+    val needsOobe: Boolean
+        get() = !settings.oobeDone && !(serverConfigured && hasCredentials)
+
+    /** 自动进入向导时的起始步（第一个未完成的步骤）。 */
+    fun oobeStartStep(): OobeStep = OobeFlow.startStep(serverConfigured, hasCredentials)
+
+    /** 向导「开始使用」：写完成标记。 */
+    fun finishOobe() {
+        settings.oobeDone = true
+    }
+
+    /** 向导地址步：保存服务器地址（调用方已用 HostNormalizer 校验）。 */
+    fun completeSetup(jwxtHost: String, iaaaHost: String) {
         settings.jwxtHost = jwxtHost
         settings.iaaaHost = iaaaHost
-        onDone()
     }
 
     /** 设置页修改服务器地址：清空旧域会话，随后自动重登并同步。 */
