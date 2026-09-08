@@ -36,7 +36,7 @@ keyPassword=***
 
 - 凭据仅存本机（EncryptedSharedPreferences / Android Keystore 加密）
 - 不写日志、不上传任何数据到第三方服务器
-- 仅访问 `iaaa.example.edu.cn` 与 `jwxt.example.edu.cn`
+- 仅访问用户自行配置的教务系统与认证地址（首次使用时填写，应用不内置任何学校域名）
 
 ## 技术栈
 

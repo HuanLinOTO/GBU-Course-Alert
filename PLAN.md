@@ -12,10 +12,10 @@
 ### 1. 登录链路（纯 API 可行 ✅）
 
 不走 jwxt 自带登录表单（RSA 加密 + `/c_raskey`），直接走 iAAA 统一身份认证。
-iAAA 登录为**明文 AJAX POST**（逆向自 `https://iaaa.example.edu.cn/iaaa/resources/javascript/OAuthLogin.js?_v=20250228`）：
+iAAA 登录为**明文 AJAX POST**（逆向自认证中心 `OAuthLogin.js`）：
 
 ```
-① POST https://iaaa.example.edu.cn/iaaa/oauthlogin.do
+① POST https://<认证域名>/iaaa/oauthlogin.do
    Content-Type: application/x-www-form-urlencoded
    appid=gbu_jwxt
    userName=26100070
@@ -23,11 +23,11 @@ iAAA 登录为**明文 AJAX POST**（逆向自 `https://iaaa.example.edu.cn/iaaa
    randCode=        ← 验证码，默认不触发；连续失败后 iAAA 返回 showCode=true 时需要
    smsCode=         ← 短信验证码（条件触发）
    otpCode=         ← 动态口令（条件触发）
-   redirUrl=https://jwxt.example.edu.cn/oauth/login/code
+   redirUrl=https://<教务域名>/oauth/login/code
 
    → 200 {"success":true,"token":"8548d80fde8ce2fa17544f701763afb9"}
 
-② GET https://jwxt.example.edu.cn/oauth/login/code?_rand=<0~1随机数>&token=<token>
+② GET https://<教务域名>/oauth/login/code?_rand=<0~1随机数>&token=<token>
    → 302 → /authentication/main，响应 Set-Cookie 建立教务系统会话（JSESSIONID）
 
 ③ 后续所有请求携带该 Cookie 即可访问需登录接口

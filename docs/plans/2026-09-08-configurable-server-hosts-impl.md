@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** 移除代码与文档中的 `jwxt.example.edu.cn` / `iaaa.example.edu.cn` 硬编码，OOBE 向导步由学生自行填写服务器地址，设置页可随时修改。
+**Goal:** 移除代码与文档中的教务/认证真实域名硬编码，OOBE 向导步由学生自行填写服务器地址，设置页可随时修改。
 
 **Architecture:** 方案 A —— `SettingsStore` 为域名唯一数据源；`GbuClient` 构造注入 `() -> Endpoints`，每请求现场解析 URL；`PersistentCookieJar` 与 `WebLoginActivity` 同样按当前配置域名工作；`MainActivity` 以「地址为空」作为 OOBE 门控。
 
@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- 应用代码、注释、资源、README 中**不得出现**任何真实学校域名（`jwxt.example.edu.cn`、`iaaa.example.edu.cn`）；示例一律用 `jwxt.example.edu.cn` / `iaaa.example.edu.cn`
+- 应用代码、注释、资源、README 中**不得出现**任何真实学校域名；示例一律用 `jwxt.example.edu.cn` / `iaaa.example.edu.cn`
 - `APP_ID = "gbu_jwxt"` 保留（iAAA OAuth 应用标识，非域名）
 - 地址仅存裸主机名；URL 一律现场以 `https://` 拼接；强制 https
 - 主机名校验：OkHttp `toHttpUrlOrNull()` 解析成功 **且** host 含 `.`，否则拒绝
@@ -81,7 +81,7 @@ object HostNormalizer {
         set(v) = prefs.edit { putString("iaaa_host", v.trim()) }
 ```
 
-- [ ] **Step 3: 写 HostNormalizerTest**
+- [x] **Step 3: 写 HostNormalizerTest**
 
 ```kotlin
 package me.huanlin.gbuca
@@ -122,7 +122,7 @@ class HostNormalizerTest {
 }
 ```
 
-- [ ] **Step 4: 运行 `:app:testDebugUnitTest --tests "me.huanlin.gbuca.HostNormalizerTest"`，期望 PASS**
+- [x] **Step 4: 运行 `:app:testDebugUnitTest --tests "me.huanlin.gbuca.HostNormalizerTest"`，期望 PASS**
 
 ### Task 2: PersistentCookieJar host 感知
 
@@ -133,7 +133,7 @@ class HostNormalizerTest {
 - Consumes: `() -> String` 域名提供者（Task 4 接线时传 `{ settings.jwxtHost }` / `{ settings.iaaaHost }`）
 - Produces: `PersistentCookieJar(storeFile: File, jwxtHost: () -> String, iaaaHost: () -> String)`；其余公开 API 不变
 
-- [ ] **Step 1: 构造参数 + 匹配谓词**
+- [x] **Step 1: 构造参数 + 匹配谓词**
 
 ```kotlin
 class PersistentCookieJar(
@@ -157,12 +157,12 @@ class PersistentCookieJar(
     }
 ```
 
-- [ ] **Step 2: 替换三处硬编码**
+- [x] **Step 2: 替换三处硬编码**
   - `saveFromResponse`：`cookies.any { it.domain.contains("jwxt") && ... }` → `cookies.any { matchesJwxt(it.domain) && (it.name.equals("SESSION", true) || it.name.equals("JSESSIONID", true)) }`
   - `hasJwxtSession()`：`it.domain.contains("jwxt")` → `matchesJwxt(it.domain)`
   - `clearIaaa()`：`storage.keys.filter { matchesIaaaKey(it) }.forEach { storage.remove(it) }`
 
-- [ ] **Step 3: 编译 `:app:compileDebugKotlin` 通过**
+- [x] **Step 3: 编译 `:app:compileDebugKotlin` 通过**
 
 ### Task 3: GbuClient 动态 Endpoints
 
@@ -173,7 +173,7 @@ class PersistentCookieJar(
 - Consumes: `Endpoints`（Task 1）、`endpointsProvider: () -> Endpoints`
 - Produces: `GbuClient(cookieJar: PersistentCookieJar, endpointsProvider: () -> Endpoints)`；`val endpoints: Endpoints`；`fun webLoginUrl(): String`（实例方法）；companion 仅剩 `const val APP_ID`（公开）与 `private const val UA`
 
-- [ ] **Step 1: 类签名与 companion**
+- [x] **Step 1: 类签名与 companion**
 
 ```kotlin
 class GbuClient(
@@ -193,7 +193,7 @@ class GbuClient(
     val endpoints: Endpoints get() = endpointsProvider()
 ```
 
-- [ ] **Step 2: URL 全部动态化（逐处替换）**
+- [x] **Step 2: URL 全部动态化（逐处替换）**
 
 ```kotlin
 // Referer 拦截器
@@ -217,8 +217,8 @@ Request.Builder().url("${endpoints.iaaaBase}oauthlogin.do").post(form).build()
 .url("${endpoints.jwxtBase}/component/getXnxqByRq?rq=$rq")
 ```
 
-- [ ] **Step 3: KDoc 登录链路注释改为占位域名（`{jwxt}`/`{iaaa}`），不出现真实域名**
-- [ ] **Step 4: 编译 `:app:compileDebugKotlin` 通过**
+- [x] **Step 3: KDoc 登录链路注释改为占位域名（`{jwxt}`/`{iaaa}`），不出现真实域名**
+- [x] **Step 4: 编译 `:app:compileDebugKotlin` 通过**
 
 ### Task 4: GbuCaApp 接线 + WebLoginActivity 动态域名
 
@@ -230,7 +230,7 @@ Request.Builder().url("${endpoints.iaaaBase}oauthlogin.do").post(form).build()
 - Consumes: Task 1/2/3 的构造签名
 - Produces: 应用级组装；`WebLoginActivity` 无常量域名
 
-- [ ] **Step 1: GbuCaApp.onCreate 调整构造顺序**
+- [x] **Step 1: GbuCaApp.onCreate 调整构造顺序**
 
 ```kotlin
 settings = SettingsStore(this)
@@ -240,7 +240,7 @@ client = GbuClient(cookieJar) { Endpoints(settings.jwxtHost, settings.iaaaHost) 
 
 （`import me.huanlin.gbuca.data.remote.Endpoints`；`settings` 必须在 `cookieJar` 之前初始化。）
 
-- [ ] **Step 2: WebLoginActivity.onPageFinished**
+- [x] **Step 2: WebLoginActivity.onPageFinished**
 
 ```kotlin
 override fun onPageFinished(view: WebView, url: String) {
@@ -259,7 +259,7 @@ override fun onPageFinished(view: WebView, url: String) {
 
 （`import android.net.Uri`；KDoc 中「jwxt JSESSIONID」改为「教务会话 Cookie」。）
 
-- [ ] **Step 3: 编译 `:app:compileDebugKotlin` 通过；`grep -r "example.edu.cn" app/src` 仅剩 0 处（strings.xml 文案除外，若亦无则更佳）**
+- [x] **Step 3: 编译 `:app:compileDebugKotlin` 通过；`grep -r "example.edu.cn" app/src` 仅剩 0 处（strings.xml 文案除外，若亦无则更佳）**
 
 ### Task 5: SetupScreen（OOBE 向导步）+ MainActivity 门控
 
@@ -273,7 +273,7 @@ override fun onPageFinished(view: WebView, url: String) {
 - Consumes: `vm.jwxtHost` / `vm.iaaaHost`（本任务定义）、`HostNormalizer.normalize`
 - Produces: `SetupScreen(vm: AppViewModel, onDone: () -> Unit)`；`AppViewModel.completeSetup(jwxtHost: String, iaaaHost: String, onDone: () -> Unit)`
 
-- [ ] **Step 1: AppViewModel 新增**
+- [x] **Step 1: AppViewModel 新增**
 
 ```kotlin
     // ---- 服务器地址（OOBE / 设置页） ----
@@ -289,7 +289,7 @@ override fun onPageFinished(view: WebView, url: String) {
     }
 ```
 
-- [ ] **Step 2: 创建 SetupScreen.kt**
+- [x] **Step 2: 创建 SetupScreen.kt**
 
 ```kotlin
 package me.huanlin.gbuca.ui
@@ -399,7 +399,7 @@ fun SetupScreen(vm: AppViewModel, onDone: () -> Unit) {
 }
 ```
 
-- [ ] **Step 3: MainActivity 门控**
+- [x] **Step 3: MainActivity 门控**
 
 ```kotlin
 var needsSetup by rememberSaveable {
@@ -412,7 +412,7 @@ when {
 }
 ```
 
-- [ ] **Step 4: strings.xml 新增（放在「登录页」段之后）**
+- [x] **Step 4: strings.xml 新增（放在「登录页」段之后）**
 
 ```xml
     <!-- OOBE 服务器配置 -->
@@ -425,7 +425,7 @@ when {
     <string name="setup_next">下一步</string>
 ```
 
-- [ ] **Step 5: 编译通过；手动冒烟：清数据启动 → 显示向导 → 填错被拦 → 填对进入登录页**
+- [x] **Step 5: 编译通过；手动冒烟：清数据启动 → 显示向导 → 填错被拦 → 填对进入登录页**
 
 ### Task 6: 设置页「服务器」分组
 
@@ -438,7 +438,7 @@ when {
 - Consumes: `HostNormalizer`、`vm.jwxtHost` / `vm.iaaaHost`、`app.cookieJar`
 - Produces: `AppViewModel.saveHosts(jwxtHost: String, iaaaHost: String)`
 
-- [ ] **Step 1: AppViewModel.saveHosts**
+- [x] **Step 1: AppViewModel.saveHosts**
 
 ```kotlin
     /** 设置页修改服务器地址：清空旧域会话 Cookie，随后自动重登并同步。 */
@@ -451,7 +451,7 @@ when {
     }
 ```
 
-- [ ] **Step 2: SettingsScreen「账号」分组上方插入**
+- [x] **Step 2: SettingsScreen「账号」分组上方插入**
 
 ```kotlin
         // ---- 服务器 ----
@@ -483,7 +483,7 @@ when {
 
 （`editingServer` 状态按上文声明在 SettingsCard 内，不另提升。）
 
-- [ ] **Step 3: ServerEditDialog（SettingsScreen.kt 内私有 Composable）**
+- [x] **Step 3: ServerEditDialog（SettingsScreen.kt 内私有 Composable）**
 
 ```kotlin
 @Composable
@@ -530,7 +530,7 @@ private fun ServerEditDialog(vm: AppViewModel, onDismiss: () -> Unit) {
 
 （新增 import：`androidx.compose.material3.AlertDialog`、`me.huanlin.gbuca.data.remote.HostNormalizer`。）
 
-- [ ] **Step 4: strings.xml「设置」段新增**
+- [x] **Step 4: strings.xml「设置」段新增**
 
 ```xml
     <string name="settings_section_server">服务器</string>
@@ -541,7 +541,7 @@ private fun ServerEditDialog(vm: AppViewModel, onDismiss: () -> Unit) {
     <string name="common_cancel">取消</string>
 ```
 
-- [ ] **Step 5: 编译通过**
+- [x] **Step 5: 编译通过**
 
 ### Task 6: 文档去域名 + 全量验证 + 提交
 
@@ -550,16 +550,16 @@ private fun ServerEditDialog(vm: AppViewModel, onDismiss: () -> Unit) {
 - Modify: `PLAN.md:26,30`
 - Test: 全量单测 + 编译
 
-- [ ] **Step 1: README 隐私声明改为**
+- [x] **Step 1: README 隐私声明改为**
 
 ```markdown
 - 仅访问用户自行配置的教务系统与认证地址（首次使用时填写，应用不内置任何学校域名）
 ```
 
-- [ ] **Step 2: PLAN.md 登录链路示例中的真实域名替换为 `<教务域名>` / `<认证域名>` 占位**
-- [ ] **Step 3: `grep -r "gbu\.edu\.cn" app/src README.md PLAN.md` → 期望 0 匹配**
-- [ ] **Step 4: `gradlew :app:testDebugUnitTest` 全量 PASS；`gradlew :app:assembleDebug` 成功**
-- [ ] **Step 5: Commit（分任务小步提交，格式 `feat: …` / `test: …` / `docs: …`）**
+- [x] **Step 2: PLAN.md 登录链路示例中的真实域名替换为 `<教务域名>` / `<认证域名>` 占位**
+- [x] **Step 3: `grep -r "gbu\.edu\.cn" app/src README.md PLAN.md` → 期望 0 匹配**
+- [x] **Step 4: `gradlew :app:testDebugUnitTest` 全量 PASS；`gradlew :app:assembleDebug` 成功**
+- [x] **Step 5: Commit（分任务小步提交，格式 `feat: …` / `test: …` / `docs: …`）**
 
 ## Execution Notes
 
