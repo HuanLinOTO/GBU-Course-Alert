@@ -202,6 +202,7 @@
     <string name="widget_week_day">第%1$d周 · %2$s</string>
     <string name="widget_course_count">%1$d 节课</string>
     <string name="widget_empty">今天没有课 🎉</string>
+    <string name="widget_rest">今日休息</string>
     <string name="widget_more">还有 %1$d 节…</string>
 
     <!-- 星期（index = dayOfWeek-1） -->

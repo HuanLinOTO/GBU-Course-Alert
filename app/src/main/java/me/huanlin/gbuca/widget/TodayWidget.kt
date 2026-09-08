@@ -34,6 +34,7 @@ import me.huanlin.gbuca.GbuCaApp
 import me.huanlin.gbuca.R
 import me.huanlin.gbuca.domain.logic.ScheduleLogic
 import me.huanlin.gbuca.domain.model.Meeting
+import me.huanlin.gbuca.domain.reminder.RestDay
 import me.huanlin.gbuca.ui.MainActivity
 import java.time.LocalDate
 import java.time.LocalTime
@@ -42,6 +43,8 @@ import java.time.format.DateTimeFormatter
 data class WidgetState(
     val date: LocalDate,
     val week: Int?,
+    /** true = 今天处于「休息」状态（提醒已静音）。 */
+    val resting: Boolean,
     val items: List<WidgetItem>,
 ) {
     data class WidgetItem(
@@ -83,6 +86,7 @@ class TodayWidget : GlanceAppWidget() {
             WidgetState(
                 date = now,
                 week = week,
+                resting = RestDay.isResting(app.settings.restDay, now),
                 items = today.map { m ->
                     WidgetState.WidgetItem(
                         name = courseNames[m.rwh] ?: "?",
@@ -117,6 +121,13 @@ private fun WidgetContent(state: WidgetState) {
             Text(
                 text = context.getString(R.string.widget_course_count, state.items.size),
                 style = TextStyle(fontSize = 12.sp, color = GlanceTheme.colors.onSurfaceVariant),
+            )
+        }
+        if (state.resting) {
+            Text(
+                text = context.getString(R.string.widget_rest),
+                style = TextStyle(fontSize = 11.sp, color = GlanceTheme.colors.onSurfaceVariant),
+                modifier = GlanceModifier.padding(horizontal = 10.dp, vertical = 1.dp),
             )
         }
         if (state.items.isEmpty()) {
