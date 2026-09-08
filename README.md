@@ -24,14 +24,28 @@
 ./gradlew assembleRelease        # 发布包（需 keystore.properties，见下）
 ```
 
-Release 签名：在项目根目录创建 `keystore.properties`：
+Release 签名：在项目根目录创建 `keystore.properties`（**不入库**，`*.jks` 与 `keystore.properties` 已在 `.gitignore` 中）：
 
 ```properties
-storeFile=my.jks
+storeFile=release.jks
 storePassword=***
 keyAlias=***
 keyPassword=***
 ```
+
+`release.jks` 放在项目根目录。本地与 CI 使用**同一把密钥**，签名指纹为：
+
+```
+SHA-256  55:84:21:07:3A:AD:7F:2B:35:10:E4:D6:59:72:86:DC:B3:96:27:B2:AF:FA:04:48:C9:53:D3:F4:71:CC:09:24
+```
+
+CI 从仓库 Secrets（`KEYSTORE_BASE64` / `KEYSTORE_PASSWORD` / `KEY_ALIAS` / `KEY_PASSWORD`）还原密钥，
+并在构建后校验 release APK 的签名指纹，与上表不一致即失败。
+
+> ⚠️ 密钥备份：`release.jks` 与 `keystore.properties` 是本项目发布签名的唯一副本（GitHub Secrets 只能写入、无法读回）。
+> 请离线备份两份。密钥一旦丢失，老用户将无法覆盖升级，只能卸载重装。
+>
+> 未配置密钥时 `assembleRelease` 会回退 debug 签名——该产物无法覆盖安装正式版本，仅供本地验证 R8 规则。
 
 ## 隐私
 

@@ -39,9 +39,46 @@ jobs:
       - name: Accept Android SDK licenses
         run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
 
-      # 无 keystore.properties 时 assembleRelease 自动回退 debug 签名，同时验证 R8/ProGuard 规则
+      # 从 Secrets 还原 release 签名密钥。缺失即中止，避免静默回退成 debug 签名
+      - name: Set up release signing
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -z "${KEYSTORE_BASE64}" ]; then
+            echo "::error::KEYSTORE_BASE64 缺失：release 会回退 debug 签名，已中止"
+            exit 1
+          fi
+          printf '%s' "$KEYSTORE_BASE64" | base64 -d > release.jks
+          {
+            echo "storeFile=release.jks"
+            echo "storePassword=${KEYSTORE_PASSWORD}"
+            echo "keyAlias=${KEY_ALIAS}"
+            echo "keyPassword=${KEY_PASSWORD}"
+          } > keystore.properties
+
+      # 同时验证 R8/ProGuard 规则；release 使用上一步还原的正式签名
       - name: Build, test and lint
         run: ./gradlew assembleDebug assembleRelease testDebugUnitTest lintDebug --stacktrace --console=plain
+
+      # 签名指纹必须与本地构建一致，否则说明密钥不一致（防止悄悄退回 debug 签名）
+      - name: Verify release signing
+        env:
+          EXPECTED_CERT_SHA256: 558421073aad7f2b3510e4d6597286dcb39627b2affa0448c953d3f471cc0924
+        run: |
+          set -euo pipefail
+          APKSIGNER=$(ls -d "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -n1)
+          DIGEST=$("$APKSIGNER" verify --print-certs app/build/outputs/apk/release/*.apk \
+            | grep -i 'certificate SHA-256 digest' | head -n1 \
+            | sed 's/.*digest: *//' | tr -d ':[:space:]' | tr 'A-Z' 'a-z')
+          echo "release cert SHA-256: $DIGEST"
+          if [ "$DIGEST" != "$EXPECTED_CERT_SHA256" ]; then
+            echo "::error::release APK 签名指纹与预期不符（期望 $EXPECTED_CERT_SHA256）"
+            exit 1
+          fi
 
       # 以 versionName 规范命名 APK：GBU-Course-Alert-vX.Y.Z-{debug,release}.apk
       - name: Collect APKs
@@ -77,7 +114,7 @@ jobs:
           - 稳定性：协程取消不再被当作业务失败上报
 
           > 首次使用需向学校获取教务系统与统一认证地址。
-          > CI 构建的 APK 使用独立的调试签名，覆盖安装本地构建版本时请先卸载。
+          > 本地与 CI 使用同一 release 签名密钥，可相互覆盖安装；从旧版本（debug 签名）升级需先卸载一次。
           EOF
           gh release create "$GITHUB_REF_NAME" apk-out/*.apk \
             --title "GBU课表 $GITHUB_REF_NAME" \
