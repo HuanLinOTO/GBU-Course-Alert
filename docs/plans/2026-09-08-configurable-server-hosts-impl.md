@@ -359,7 +359,6 @@ fun SetupScreen(vm: AppViewModel, onDone: () -> Unit) {
             value = jwxt,
             onValueChange = { jwxt = it },
             label = { Text(stringResource(R.string.setup_jwxt_label)) },
-            placeholder = { Text(stringResource(R.string.setup_host_hint)) },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
@@ -371,7 +370,6 @@ fun SetupScreen(vm: AppViewModel, onDone: () -> Unit) {
             value = iaaa,
             onValueChange = { iaaa = it },
             label = { Text(stringResource(R.string.setup_iaaa_label)) },
-            placeholder = { Text(stringResource(R.string.setup_host_hint)) },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
@@ -420,8 +418,7 @@ when {
     <string name="setup_subtitle">填写学校的教务系统与统一认证（iAAA）地址，请以学校公布的信息为准。</string>
     <string name="setup_jwxt_label">教务系统地址</string>
     <string name="setup_iaaa_label">统一认证（iAAA）地址</string>
-    <string name="setup_host_hint">jwxt.example.edu.cn</string>
-    <string name="setup_host_invalid">地址格式不正确，请填写如 jwxt.example.edu.cn 的域名</string>
+    <string name="setup_host_invalid">地址格式不正确，请填写学校公布的域名</string>
     <string name="setup_next">下一步</string>
 ```
 

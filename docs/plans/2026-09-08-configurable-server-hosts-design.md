@@ -77,8 +77,7 @@ SettingsStore (jwxtHost / iaaaHost, SharedPreferences)
   `needsSetup = settings.jwxtHost.isBlank() || settings.iaaaHost.isBlank()`；
   needsSetup → SetupScreen；否则原逻辑（已登录 → AppNavHost，未登录 → LoginScreen）。
 - **UI**：标题「连接你的学校」+ 说明（地址以学校公布为准）+ 两个输入框
-  （教务系统地址、认证 iAAA 地址；placeholder 用 `jwxt.example.edu.cn` 等示例，
-  不出现真实域名）+「下一步」。
+  （教务系统地址、认证 iAAA 地址；不设 placeholder 提示，不出现任何示例域名）+「下一步」。
 - **校验**：与设置页共用 `normalizeHost`；解析失败或 host 无点则 inline 报错；
   两框均有效才启用按钮。
 - **保存后**：`vm.completeSetup()` 存 prefs → 回调 MainActivity：凭据存在 → 主界面，

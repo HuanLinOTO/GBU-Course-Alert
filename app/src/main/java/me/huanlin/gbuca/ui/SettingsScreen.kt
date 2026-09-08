@@ -362,7 +362,6 @@ private fun ServerEditDialog(vm: AppViewModel, onDismiss: () -> Unit) {
                     value = jwxt,
                     onValueChange = { jwxt = it },
                     label = { Text(stringResource(R.string.setup_jwxt_label)) },
-                    placeholder = { Text(stringResource(R.string.setup_host_hint)) },
                     singleLine = true,
                     isError = jwxt.isNotBlank() && j == null,
                     supportingText = {
@@ -373,7 +372,6 @@ private fun ServerEditDialog(vm: AppViewModel, onDismiss: () -> Unit) {
                     value = iaaa,
                     onValueChange = { iaaa = it },
                     label = { Text(stringResource(R.string.setup_iaaa_label)) },
-                    placeholder = { Text(stringResource(R.string.setup_host_hint)) },
                     singleLine = true,
                     isError = iaaa.isNotBlank() && i == null,
                     supportingText = { if (iaaa.isNotBlank() && i == null) Text(stringResource(R.string.setup_host_invalid)) },
