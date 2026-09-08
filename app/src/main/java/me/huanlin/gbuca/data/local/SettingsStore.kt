@@ -2,6 +2,7 @@ package me.huanlin.gbuca.data.local
 
 import android.content.Context
 import androidx.core.content.edit
+import me.huanlin.gbuca.domain.reminder.RestDay
 import java.time.DayOfWeek
 import java.time.LocalDate
 
@@ -65,6 +66,16 @@ class SettingsStore(context: Context) {
         get() = prefs.getBoolean("reminders_enabled", true)
         set(v) = prefs.edit { putBoolean("reminders_enabled", v) }
 
+    /** 「今日休息」的日期（epochDay）；null = 未休息。跨零点自动失效。 */
+    var restDay: Long?
+        get() = prefs.getLong(KEY_REST_DAY, NO_REST).takeIf { it != NO_REST }
+        set(v) = prefs.edit {
+            if (v == null) remove(KEY_REST_DAY) else putLong(KEY_REST_DAY, v)
+        }
+
+    /** 休息是否对今天生效（跨零点自动为 false）。 */
+    fun isRestingToday(): Boolean = RestDay.isResting(restDay, LocalDate.now())
+
     var lastSyncAt: Long
         get() = prefs.getLong("last_sync_at", 0L)
         set(v) = prefs.edit { putLong("last_sync_at", v) }
@@ -75,6 +86,11 @@ class SettingsStore(context: Context) {
         set(v) = prefs.edit { putStringSet("scheduled_alarms", v) }
 
     companion object {
+        private const val KEY_REST_DAY = "rest_day"
+
+        /** SharedPreferences 没有 null long：用哨兵值表示「未休息」。 */
+        private const val NO_REST = Long.MIN_VALUE
+
         /** "2026-20271" → 2026-08-31（9月1日当周周一）；"2026-20272" → 次年3月1日当周周一。 */
         fun defaultStartMonday(xnxq: String): LocalDate {
             val m = Regex("""^(\d{4})-\d{4}([12])$""").find(xnxq) ?: return LocalDate.now().with(DayOfWeek.MONDAY)

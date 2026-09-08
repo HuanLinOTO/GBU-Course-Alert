@@ -15,6 +15,7 @@ import me.huanlin.gbuca.GbuCaApp
 import me.huanlin.gbuca.R
 import me.huanlin.gbuca.domain.logic.ScheduleLogic
 import me.huanlin.gbuca.domain.model.Meeting
+import me.huanlin.gbuca.domain.reminder.RestDay
 import me.huanlin.gbuca.widget.TodayWidgetReceiver
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -90,6 +91,9 @@ class ReminderScheduler(
         val liveNotifierReady = settings.remindersEnabled
         for (dayOffset in 0..hours / 24 + 1) {
             val date = now.toLocalDate().plusDays(dayOffset.toLong())
+            // 「今日休息」：整日跳过（闹钟与 Live Update 一并跳过），
+            // 因此同步 / 开机 / 改设置触发的重排都不会把今天的提醒排回来
+            if (RestDay.isResting(settings.restDay, date)) continue
             val week = ScheduleLogic.weekOf(date, startMonday) ?: continue
             val dayList = ScheduleLogic.meetingsOn(date, week, meetings)
             dayList.forEachIndexed { idx, m ->
