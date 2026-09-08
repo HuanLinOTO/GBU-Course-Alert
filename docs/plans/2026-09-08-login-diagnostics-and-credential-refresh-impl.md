@@ -42,7 +42,7 @@
 > 先按 Step 1 写测试会编译失败 —— 这正是 TDD 的失败态。Step 3/4 需要先完成 Task 2 的
 > `GbuException.kt` 改造，再回来跑通。执行顺序：Task1.Step1 → Task2.Step1~3 → Task1.Step2~5。
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 ```kotlin
 package me.huanlin.gbuca
@@ -121,12 +121,12 @@ class GbuDiagnosticsTest {
 }
 ```
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 Run（持久 terminal）：`.\gradlew.bat :app:testDebugUnitTest --tests "me.huanlin.gbuca.GbuDiagnosticsTest"`
 Expected: FAIL —— 编译错误 `Unresolved reference: GbuDiagnostics` / `Stage`
 
-- [ ] **Step 3: 写实现**
+- [x] **Step 3: 写实现**
 
 ```kotlin
 package me.huanlin.gbuca.data
@@ -195,12 +195,12 @@ object GbuDiagnostics {
 }
 ```
 
-- [ ] **Step 4: 跑测试确认通过**
+- [x] **Step 4: 跑测试确认通过**
 
 Run：`.\gradlew.bat :app:testDebugUnitTest --tests "me.huanlin.gbuca.GbuDiagnosticsTest"`
-Expected: PASS（9 个用例）
+Expected: PASS（10 个用例）
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**
 
 ```bash
 git add app/src/main/java/me/huanlin/gbuca/data/GbuDiagnostics.kt app/src/test/java/me/huanlin/gbuca/GbuDiagnosticsTest.kt
@@ -223,7 +223,7 @@ git commit -m "feat(diag): 新增失败诊断文本纯函数与单测"
   - `GbuException.ApiError.detail: String`
   - `message` == `summary`（不再有 `body` 字段）
 
-- [ ] **Step 1: 追加失败测试**
+- [x] **Step 1: 追加失败测试**
 
 在 `GbuDiagnosticsTest` 末尾追加：
 
@@ -249,12 +249,12 @@ git commit -m "feat(diag): 新增失败诊断文本纯函数与单测"
     }
 ```
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 Run：`.\gradlew.bat :app:testDebugUnitTest --tests "me.huanlin.gbuca.GbuDiagnosticsTest"`
 Expected: FAIL —— `Too many arguments for constructor ApiError` / `Unresolved reference: Stage`
 
-- [ ] **Step 3: 替换 GbuException.kt 全文**
+- [x] **Step 3: 替换 GbuException.kt 全文**
 
 ```kotlin
 package me.huanlin.gbuca.data
@@ -294,12 +294,12 @@ sealed class GbuException(message: String, cause: Throwable? = null) : Exception
 }
 ```
 
-- [ ] **Step 4: 跑测试确认通过**
+- [x] **Step 4: 跑测试确认通过**
 
 Run：`.\gradlew.bat :app:testDebugUnitTest --tests "me.huanlin.gbuca.GbuDiagnosticsTest"`
-Expected: PASS（11 个用例）
+Expected: PASS（12 个用例）
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**
 
 ```bash
 git add app/src/main/java/me/huanlin/gbuca/data/GbuException.kt app/src/test/java/me/huanlin/gbuca/GbuDiagnosticsTest.kt
@@ -318,7 +318,7 @@ git commit -m "feat(diag): ApiError 结构化（环节/摘要/地址/状态/响�
 - Consumes: `GbuException.ApiError(...)`（Task 2）
 - Produces: 无新接口；所有 `ApiError` 抛点都带 `stage` + 可读 `summary` + 技术字段
 
-- [ ] **Step 1: 改造 login 的 iAAA 响应解析**
+- [x] **Step 1: 改造 login 的 iAAA 响应解析**
 
 把 `GbuClient.kt` 中：
 
@@ -344,7 +344,7 @@ git commit -m "feat(diag): ApiError 结构化（环节/摘要/地址/状态/响�
             ?: throw iaaaNotJson(body, httpCode)
 ```
 
-- [ ] **Step 2: 改造无 token 与教务会话两处抛点**
+- [x] **Step 2: 改造无 token 与教务会话两处抛点**
 
 把：
 
@@ -394,7 +394,7 @@ git commit -m "feat(diag): ApiError 结构化（环节/摘要/地址/状态/响�
         }
 ```
 
-- [ ] **Step 3: 新增 iaaaNotJson 私有辅助函数**
+- [x] **Step 3: 新增 iaaaNotJson 私有辅助函数**
 
 在 `GbuClient` 内、`parseApiResponse` 之前插入：
 
@@ -409,7 +409,7 @@ git commit -m "feat(diag): ApiError 结构化（环节/摘要/地址/状态/响�
     )
 ```
 
-- [ ] **Step 4: 改造 parseApiResponse 全文**
+- [x] **Step 4: 改造 parseApiResponse 全文**
 
 ```kotlin
     private fun <T> parseApiResponse(resp: Response, parse: (String) -> T): T {
@@ -449,7 +449,7 @@ git commit -m "feat(diag): ApiError 结构化（环节/摘要/地址/状态/响�
     }
 ```
 
-- [ ] **Step 5: 改造 CourseRepository 学期格式抛点**
+- [x] **Step 5: 改造 CourseRepository 学期格式抛点**
 
 把 `CourseRepository.kt`：
 
@@ -466,12 +466,12 @@ git commit -m "feat(diag): ApiError 结构化（环节/摘要/地址/状态/响�
             )
 ```
 
-- [ ] **Step 6: 编译 + 全量单测**
+- [x] **Step 6: 编译 + 全量单测**
 
 Run：`.\gradlew.bat :app:testDebugUnitTest`
 Expected: BUILD SUCCESSFUL，全部既有测试通过
 
-- [ ] **Step 7: 提交**
+- [x] **Step 7: 提交**
 
 ```bash
 git add app/src/main/java/me/huanlin/gbuca/data/remote/GbuClient.kt app/src/main/java/me/huanlin/gbuca/data/repo/CourseRepository.kt
@@ -494,7 +494,7 @@ git commit -m "fix(diag): 六处接口失败抛点补齐环节与响应片段"
   - `AppViewModel.saveCredentialsAndLogin(u: String, p: String)`（`saveCredentials` 删除）
   - 字符串资源 `msg_credentials_saved`、`msg_credentials_saved_sync_failed`
 
-- [ ] **Step 1: strings.xml 追加三条文案**
+- [x] **Step 1: strings.xml 追加三条文案**
 
 在 `<!-- 设置 -->` 段落内 `settings_sync_only` 之后插入：
 
@@ -509,7 +509,7 @@ git commit -m "fix(diag): 六处接口失败抛点补齐环节与响应片段"
     <string name="common_copy_error_detail">复制错误详情</string>
 ```
 
-- [ ] **Step 2: 改造 UiState**
+- [x] **Step 2: 改造 UiState**
 
 把：
 
@@ -543,7 +543,7 @@ git commit -m "fix(diag): 六处接口失败抛点补齐环节与响应片段"
     )
 ```
 
-- [ ] **Step 3: 改造 friendlyError 并新增 errorDetailOf**
+- [x] **Step 3: 改造 friendlyError 并新增 errorDetailOf**
 
 把 `friendlyError` 全文替换为：
 
@@ -578,7 +578,7 @@ git commit -m "fix(diag): 六处接口失败抛点补齐环节与响应片段"
 
 新增 import：`me.huanlin.gbuca.BuildConfig`、`me.huanlin.gbuca.data.GbuDiagnostics`。
 
-- [ ] **Step 4: sync() 带上 errorDetail / messageOk**
+- [x] **Step 4: sync() 带上 errorDetail / messageOk**
 
 把 `sync()` 中：
 
@@ -633,7 +633,7 @@ git commit -m "fix(diag): 六处接口失败抛点补齐环节与响应片段"
                 )
 ```
 
-- [ ] **Step 5: login() 带上 errorDetail / messageOk**
+- [x] **Step 5: login() 带上 errorDetail / messageOk**
 
 把 `ui.value = ui.value.copy(syncing = true, message = null, needWebLogin = false, calibrateOk = null)`
 替换为 `ui.value = ui.value.copy(syncing = true, message = null, errorDetail = null, messageOk = null, needWebLogin = false)`。
@@ -662,7 +662,7 @@ git commit -m "fix(diag): 六处接口失败抛点补齐环节与响应片段"
             )
 ```
 
-- [ ] **Step 6: 用 saveCredentialsAndLogin 替换 saveCredentials**
+- [x] **Step 6: 用 saveCredentialsAndLogin 替换 saveCredentials**
 
 删除：
 
@@ -717,7 +717,7 @@ git commit -m "fix(diag): 六处接口失败抛点补齐环节与响应片段"
     }
 ```
 
-- [ ] **Step 7: calibrateSemesterStartFromServer 去掉 calibrateOk**
+- [x] **Step 7: calibrateSemesterStartFromServer 去掉 calibrateOk**
 
 把：
 
@@ -744,7 +744,7 @@ git commit -m "fix(diag): 六处接口失败抛点补齐环节与响应片段"
                 messageOk = date != null,
 ```
 
-- [ ] **Step 8: SettingsScreen 调用点最小切换（保证编译）**
+- [x] **Step 8: SettingsScreen 调用点最小切换（保证编译）**
 
 把 `SettingsScreen.kt:70-72`：
 
@@ -789,12 +789,12 @@ git commit -m "fix(diag): 六处接口失败抛点补齐环节与响应片段"
                 }, enabled = !ui.syncing) {
 ```
 
-- [ ] **Step 9: 编译**
+- [x] **Step 9: 编译**
 
 Run：`.\gradlew.bat :app:compileDebugKotlin`
 Expected: BUILD SUCCESSFUL
 
-- [ ] **Step 10: 提交**
+- [x] **Step 10: 提交**
 
 ```bash
 git add app/src/main/java/me/huanlin/gbuca/ui/AppViewModel.kt app/src/main/java/me/huanlin/gbuca/ui/SettingsScreen.kt app/src/main/res/values/strings.xml
@@ -813,9 +813,9 @@ git commit -m "feat(auth): 保存并登录改为先验证后落盘；UiState 增
 
 **Interfaces:**
 - Consumes: `AppViewModel.UiState.message / errorDetail / messageOk`（Task 4）
-- Produces: `@Composable fun ErrorMessage(message: String?, detail: String? = null, ok: Boolean? = null, modifier: Modifier = Modifier)`
+- Produces: `@Composable fun ErrorMessage(message: String?, modifier: Modifier = Modifier, detail: String? = null, ok: Boolean? = null)`（`modifier` 必须是第一个可选参数，否则 lint `ModifierParameter` 报警）
 
-- [ ] **Step 1: 新建 ErrorMessage.kt**
+- [x] **Step 1: 新建 ErrorMessage.kt**
 
 ```kotlin
 package me.huanlin.gbuca.ui.components
@@ -869,7 +869,7 @@ private fun Context.copyToClipboard(text: String) {
 }
 ```
 
-- [ ] **Step 2: LoginScreen 接线**
+- [x] **Step 2: LoginScreen 接线**
 
 把：
 
@@ -893,7 +893,7 @@ private fun Context.copyToClipboard(text: String) {
 
 新增 import：`me.huanlin.gbuca.ui.components.ErrorMessage`。
 
-- [ ] **Step 3: SetupFlowScreen 登录步接线**
+- [x] **Step 3: SetupFlowScreen 登录步接线**
 
 把 `LoginStep` 中：
 
@@ -927,7 +927,7 @@ private fun Context.copyToClipboard(text: String) {
 
 新增 import：`me.huanlin.gbuca.ui.components.ErrorMessage`。
 
-- [ ] **Step 4: SettingsScreen 两处接线**
+- [x] **Step 4: SettingsScreen 两处接线**
 
 账号卡片内把：
 
@@ -967,12 +967,12 @@ private fun Context.copyToClipboard(text: String) {
 
 新增 import：`me.huanlin.gbuca.ui.components.ErrorMessage`。
 
-- [ ] **Step 5: 编译 + lint**
+- [x] **Step 5: 编译 + lint**
 
 Run：`.\gradlew.bat :app:compileDebugKotlin` → BUILD SUCCESSFUL
 Run：`.\gradlew.bat :app:lintDebug` → 无新增 error
 
-- [ ] **Step 6: 提交**
+- [x] **Step 6: 提交**
 
 ```bash
 git add app/src/main/java/me/huanlin/gbuca/ui/components/ErrorMessage.kt app/src/main/java/me/huanlin/gbuca/ui/LoginScreen.kt app/src/main/java/me/huanlin/gbuca/ui/SetupFlowScreen.kt app/src/main/java/me/huanlin/gbuca/ui/SettingsScreen.kt
@@ -991,7 +991,7 @@ git commit -m "feat(ui): 共用 ErrorMessage 组件（主色/错误色 + 复制�
 - Consumes: `AppViewModel.saveCredentialsAndLogin(u, p)`、`ErrorMessage`、`GbuCaApp.instance.creds`
 - Produces: 字符串资源 `settings_password_required_for_new_id`
 
-- [ ] **Step 1: 新增字符串**
+- [x] **Step 1: 新增字符串**
 
 在 `settings_password_keep` 之后插入：
 
@@ -999,7 +999,7 @@ git commit -m "feat(ui): 共用 ErrorMessage 组件（主色/错误色 + 复制�
     <string name="settings_password_required_for_new_id">更改学号后需重新输入密码</string>
 ```
 
-- [ ] **Step 2: 密码输入框 label 按「是否已存密码」判断**
+- [x] **Step 2: 密码输入框 label 按「是否已存密码」判断**
 
 把：
 
@@ -1025,7 +1025,7 @@ git commit -m "feat(ui): 共用 ErrorMessage 组件（主色/错误色 + 复制�
                 },
 ```
 
-- [ ] **Step 3: 学号变更 + 密码留空就地拦截**
+- [x] **Step 3: 学号变更 + 密码留空就地拦截**
 
 把 Task 4 改过的按钮体：
 
@@ -1081,12 +1081,12 @@ git commit -m "feat(ui): 共用 ErrorMessage 组件（主色/错误色 + 复制�
             }
 ```
 
-- [ ] **Step 4: 编译 + lint**
+- [x] **Step 4: 编译 + lint**
 
 Run：`.\gradlew.bat :app:compileDebugKotlin` → BUILD SUCCESSFUL
 Run：`.\gradlew.bat :app:lintDebug` → 无新增 error
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**
 
 ```bash
 git add app/src/main/java/me/huanlin/gbuca/ui/SettingsScreen.kt app/src/main/res/values/strings.xml
@@ -1103,17 +1103,17 @@ git commit -m "fix(settings): 学号变更需重输密码；密码框标签按�
 - Consumes: 前六个 Task 的全部改动
 - Produces: 可发布的验证结论
 
-- [ ] **Step 1: 全量单测**
+- [x] **Step 1: 全量单测**
 
 Run：`.\gradlew.bat :app:testDebugUnitTest`
-Expected: BUILD SUCCESSFUL，`GbuDiagnosticsTest` 11 个用例 + 既有测试全绿
+Expected: BUILD SUCCESSFUL，`GbuDiagnosticsTest` 12 个用例 + 既有测试全绿
 
-- [ ] **Step 2: 打包**
+- [x] **Step 2: 打包**
 
 Run：`.\gradlew.bat :app:assembleDebug`
 Expected: BUILD SUCCESSFUL
 
-- [ ] **Step 3: lint**
+- [x] **Step 3: lint**
 
 Run：`.\gradlew.bat :app:lintDebug`
 Expected: 无新增 error
@@ -1137,11 +1137,11 @@ Expected: 无新增 error
 - 期望：提示「已保存并登录，同步到 N 门课程」（主色）
 - 期望：`adb logcat -s GbuClient` 出现一次新的 iAAA 登录（证明真的用了新凭据，而不是复用旧会话）
 
-- [ ] **Step 6: 更新 README（如需要）**
+- [x] **Step 6: 更新 README（如需要）**
 
 README 的隐私说明无需改动（未新增任何外发数据）；若其中列有错误提示说明，同步补充「可复制错误详情」。无则跳过。
 
-- [ ] **Step 7: 提交验证记录**
+- [x] **Step 7: 提交验证记录**
 
 ```bash
 git add -A
@@ -1149,6 +1149,81 @@ git commit -m "chore: 登录诊断与凭据刷新验证通过"
 ```
 
 ---
+
+---
+
+### Task 8: 修复「今日页吞掉其他页消息」（验证中发现）
+
+**Files:**
+- Modify: `app/src/main/java/me/huanlin/gbuca/ui/AppViewModel.kt`（`UiState.snackbar` / `sync()` / `clearMessage` → `clearSnackbar`）
+- Modify: `app/src/main/java/me/huanlin/gbuca/ui/TodayScreen.kt`（消费 `snackbar` 而非 `message`）
+
+**问题：** `AppNavHost` 的 `HorizontalPager` 设了 `beyondViewportPageCount = tabs.size - 1`，
+三个页面常驻组合；`TodayScreen` 的 `LaunchedEffect(ui.message)` 会把**任何**页面的消息
+（包括设置页/登录页的错误提示）拿去做 snackbar，并在约 4 秒后 `clearMessage()`。
+结果：错误提示只显示几秒就消失 —— 用户反馈「压根没有助于修复的信息」也有这一层原因，
+且新增的「复制错误详情」按钮会在用户来得及点之前消失。
+
+**修复：** `UiState` 新增 `snackbar: String?`（今日页专用瞬时消息）；`sync()` 同时写
+`message` 与 `snackbar`；`TodayScreen` 只消费 `snackbar` 并调 `clearSnackbar()`；
+登录 / 设置 / 校准的消息只写 `message`，常驻到下一次操作。
+
+- [x] **Step 1: 改造 UiState + sync + clearSnackbar**
+
+```kotlin
+        /**
+         * 今日页专用瞬时消息（snackbar），显示后即清除。
+         * 与 [message] 分离：三个页面常驻组合，若共用同一字段，今日页会把
+         * 设置页/登录页的常驻错误提示抢走并在几秒后清空。
+         */
+        val snackbar: String? = null,
+```
+
+`sync()` 成功/失败分支分别补 `snackbar = msg`；`clearMessage()` 改为：
+
+```kotlin
+    fun clearSnackbar() {
+        ui.value = ui.value.copy(snackbar = null)
+    }
+```
+
+- [x] **Step 2: TodayScreen 消费 snackbar**
+
+```kotlin
+    LaunchedEffect(ui.snackbar) {
+        ui.snackbar?.let {
+            snackbar.showSnackbar(it)
+            vm.clearSnackbar()
+        }
+    }
+```
+
+- [x] **Step 3: 单测 + lint + 真机复验**
+
+Run：`.\gradlew.bat :app:testDebugUnitTest :app:lintDebug`
+Expected: 全部 PASS / 无新增 error
+真机：填错密码 → 错误提示在 T+3s 与 T+15s 均仍在（修复前 T+5s 已消失）；今日页「同步」snackbar 正常。
+
+- [x] **Step 4: 提交**
+
+```bash
+git commit -m "fix(ui): 今日页不再吞掉设置/登录页的常驻错误提示（snackbar 字段分离）"
+```
+
+---
+
+## 验证记录（2026-09-08，真机 PJF110 / Android 16）
+
+| 项 | 结果 |
+| --- | --- |
+| `:app:testDebugUnitTest` | 11 个测试类全绿，含新增 `GbuDiagnosticsTest` 12 例 |
+| `:app:assembleDebug` / `:app:assembleRelease` | BUILD SUCCESSFUL |
+| `:app:lintDebug` | 改动文件 0 问题（全库仅 2 个既有 warning） |
+| release 包 `adb install -r` 升级 | Success，签名一致，**数据与凭据保留** |
+| 升级后「同步」 | 「已同步 11 门课程」（今日页 snackbar 正常） |
+| 设置页填错密码 →「保存并登录」 | 显示「登录失败：User ID or Password is NOT correct.」，**T+15s 仍常驻**（修复前约 4s 被清空） |
+| 失败后凭据未被覆盖 | 代码级结构性保证：`login` 抛异常时 `creds.save` 不会执行；设备侧未做强制掉线复验（需改地址，未获授权） |
+| ApiError 文案 + 复制按钮真机复验 | **未做** —— 需临时把认证地址改成非 iAAA 主机再改回，未获授权 |
 
 ## 自检记录
 

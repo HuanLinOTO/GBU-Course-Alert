@@ -147,9 +147,9 @@ class ApiError(
 @Composable
 fun ErrorMessage(
     message: String?,
+    modifier: Modifier = Modifier,
     detail: String? = null,
     ok: Boolean? = null,
-    modifier: Modifier = Modifier,
 )
 ```
 
