@@ -7,7 +7,7 @@ import org.junit.Before
 import org.junit.Test
 import java.time.LocalTime
 
-/** TimeGrid.locate：时刻 → (节次, 节内比例)。单例可变，测试前先 reset 保证用默认网格。 */
+/** TimeGrid.locate：时刻 → (节次, 行内真实时间比例)。单例可变，测试前先 reset 保证用默认网格。 */
 class TimeGridTest {
 
     @Before
@@ -25,15 +25,21 @@ class TimeGridTest {
 
     @Test
     fun `节内线性插值`() {
-        val (idx, frac) = checkNotNull(TimeGrid.locate(LocalTime.of(14, 30))) // 第9节 14:00-14:35
+        val (idx, frac) = checkNotNull(TimeGrid.locate(LocalTime.of(14, 30))) // 第9行跨度 14:00→14:40
         assertEquals(9, idx)
-        assertEquals(30f / 35f, frac, 1e-4f)
+        assertEquals(30f / 40f, frac, 1e-4f)
     }
 
     @Test
-    fun `课间归入前一节末尾`() {
-        // 15:20 在第10节(15:15 结束)与第11节(15:30 开始)之间的大课间
-        assertEquals(10 to 1f, TimeGrid.locate(LocalTime.of(15, 20)))
+    fun `节末时刻停在本节行内比例`() {
+        // 12:15 是第6节结束，但第6行跨度到 12:30（下一节开始），35/50=0.7，不贴 12:30 刻度线
+        assertEquals(6 to 0.7f, TimeGrid.locate(LocalTime.of(12, 15)))
+    }
+
+    @Test
+    fun `课间按真实时间落在前行内`() {
+        // 15:20 在第10节(15:15结束)与第11节(15:30开始)之间：行跨度 14:40→15:30，40/50=0.8
+        assertEquals(10 to 0.8f, TimeGrid.locate(LocalTime.of(15, 20)))
     }
 
     @Test

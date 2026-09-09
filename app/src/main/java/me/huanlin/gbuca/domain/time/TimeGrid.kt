@@ -73,20 +73,23 @@ object TimeGrid {
 
     fun period(index: Int): Period? = periods.firstOrNull { it.index == index }
 
-    /** 时刻 → (节次序号, 节内比例 0f..1f)。早于首节归首节 0f；课间归前一节 1f；晚于末节归末节 1f。 */
+    /** 时刻 → (节次序号, 行内真实时间比例 0f..1f)。行跨度 = 本节开始→下一节开始（末节为→本节结束），
+     *  节末时刻落在行内比例处而非下一节刻度线（如 12:15 → 第6行 35/50≈0.7）；课间同理按真实时间落位。
+     *  早于首节归首节 0f；晚于末节结束归末节 1f。 */
     fun locate(time: LocalTime): Pair<Int, Float>? {
         val sorted = periods.sortedBy { it.index }
         val first = sorted.firstOrNull() ?: return null
         if (!time.isAfter(first.start)) return first.index to 0f
-        var last = first
-        for (p in sorted) {
-            if (p.start.isAfter(time)) break
-            last = p
+        for (i in sorted.indices) {
+            val p = sorted[i]
+            val spanEnd = sorted.getOrNull(i + 1)?.start ?: p.end
+            if (time.isBefore(spanEnd)) {
+                val span = ChronoUnit.SECONDS.between(p.start, spanEnd).coerceAtLeast(1)
+                val frac = ChronoUnit.SECONDS.between(p.start, time).toFloat() / span
+                return p.index to frac.coerceIn(0f, 1f)
+            }
         }
-        if (time.isAfter(last.end)) return last.index to 1f
-        val total = ChronoUnit.SECONDS.between(last.start, last.end).coerceAtLeast(1)
-        val frac = ChronoUnit.SECONDS.between(last.start, time).toFloat() / total
-        return last.index to frac
+        return sorted.last().index to 1f
     }
 
     fun update(kbjcItems: List<KbjcItem>) {
