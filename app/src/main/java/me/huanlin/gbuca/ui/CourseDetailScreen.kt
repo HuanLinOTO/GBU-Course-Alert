@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -42,14 +43,14 @@ fun CourseDetailScreen(rwh: String, vm: AppViewModel) {
     val meetings = termData.meetings.filter { it.rwh == rwh }
         .sortedWith(compareBy({ it.weekday }, { it.startTime }))
 
-    Column(Modifier.fillMaxSize()) {
-        TopAppBar(title = { Text(course?.name ?: titleFallback) })
+    Scaffold(
+        topBar = { TopAppBar(title = { Text(course?.name ?: titleFallback) }) },
+    ) { padding ->
         if (course == null) {
             Text(stringResource(R.string.detail_not_found), Modifier.padding(16.dp))
-            return
-        }
+        } else {
         LazyColumn(
-            Modifier.fillMaxSize(),
+            Modifier.fillMaxSize().padding(padding),
             contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
@@ -121,6 +122,7 @@ fun CourseDetailScreen(rwh: String, vm: AppViewModel) {
                         Text(it, style = MaterialTheme.typography.bodySmall)
                     }
                 }
+            }
             }
         }
     }
