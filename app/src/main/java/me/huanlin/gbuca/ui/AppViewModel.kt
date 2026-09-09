@@ -21,6 +21,11 @@ import me.huanlin.gbuca.domain.model.TermData
 import me.huanlin.gbuca.domain.oobe.OobeFlow
 import me.huanlin.gbuca.domain.oobe.OobeStep
 import me.huanlin.gbuca.domain.time.TimeGrid
+import me.huanlin.gbuca.update.AppUpdateChecks
+import me.huanlin.gbuca.update.AppUpdater
+import me.huanlin.gbuca.update.GitHubAsset
+import me.huanlin.gbuca.update.GitHubRelease
+import java.io.File
 
 class AppViewModel : ViewModel() {
 
@@ -379,6 +384,129 @@ class AppViewModel : ViewModel() {
         settings.iaaaHost = iaaaHost
         if (changed) app.cookieJar.clear()
         sync()
+    }
+
+    // ---- 应用更新（GitHub Release，手动触发） ----
+
+    /**
+     * 更新流程状态机：
+     * Idle → Checking → UpToDate | Failed | Available → Downloading → Ready | NeedInstallPermission。
+     * 下载失败/校验失败回到 Available（携带 error），不丢已获取的 release 信息。
+     */
+    sealed interface UpdateState {
+        data object Idle : UpdateState
+        data object Checking : UpdateState
+        data class UpToDate(val version: String) : UpdateState
+        /** 发现新版本；error 非空表示上一次下载/校验失败。 */
+        data class Available(
+            val release: GitHubRelease,
+            val asset: GitHubAsset,
+            val error: String? = null,
+        ) : UpdateState
+        /** percent < 0 = 响应无 content-length，UI 显示不确定进度。 */
+        data class Downloading(val percent: Int) : UpdateState
+        data class Ready(val file: File, val tag: String, val message: String? = null) : UpdateState
+        data class NeedInstallPermission(val file: File, val tag: String) : UpdateState
+        data class Failed(val message: String) : UpdateState
+    }
+
+    private val _updateState = MutableStateFlow<UpdateState>(UpdateState.Idle)
+    val updateState: StateFlow<UpdateState> = _updateState
+
+    private var updateJob: kotlinx.coroutines.Job? = null
+
+    /** 手动检查 GitHub 最新 release；检查/下载进行中忽略重复触发。 */
+    fun checkForUpdate() {
+        val s = _updateState.value
+        if (s is UpdateState.Checking || s is UpdateState.Downloading) return
+        updateJob?.cancel()
+        viewModelScope.launch {
+            _updateState.value = UpdateState.Checking
+            val result = runCatchingNonCancellation { app.updater.checkLatest() }
+            val release = result.getOrNull()
+            val e = result.exceptionOrNull()
+            _updateState.value = when {
+                e != null -> UpdateState.Failed(app.getString(R.string.msg_update_check_failed, updatePlainError(e)))
+                release == null -> UpdateState.Failed(app.getString(R.string.msg_update_no_release))
+                !AppUpdateChecks.isNewerVersion(BuildConfig.VERSION_NAME, release.tagName) ->
+                    UpdateState.UpToDate(release.tagName.removePrefix("v"))
+                else -> AppUpdateChecks.pickApkAsset(release.assets)
+                    ?.let { UpdateState.Available(release, it) }
+                    ?: UpdateState.Failed(app.getString(R.string.msg_update_no_apk))
+            }
+        }
+    }
+
+    /** 下载新版本 APK（后台协程），完成即拉起系统安装器；缺授权转 NeedInstallPermission。 */
+    fun downloadUpdate() {
+        val s = _updateState.value as? UpdateState.Available ?: return
+        updateJob?.cancel()
+        updateJob = viewModelScope.launch {
+            _updateState.value = UpdateState.Downloading(if (s.asset.size > 0) 0 else -1)
+            try {
+                val file = app.updater.downloadApk(s.asset) { pct ->
+                    _updateState.value = UpdateState.Downloading(pct)
+                }
+                _updateState.value = UpdateState.Ready(file, s.release.tagName)
+                installUpdate()
+            } catch (c: kotlinx.coroutines.CancellationException) {
+                _updateState.value = s   // 用户取消 → 回到「有新版本」，保留错误信息为空
+                throw c
+            } catch (e: Exception) {
+                _updateState.value = s.copy(error = updateDownloadError(e))
+            }
+        }
+    }
+
+    /** （再次）拉起系统安装器；缺「安装未知应用」授权时转 NeedInstallPermission，文件保留供重试。 */
+    fun installUpdate() {
+        val s = _updateState.value
+        val file = when (s) {
+            is UpdateState.Ready -> s.file
+            is UpdateState.NeedInstallPermission -> s.file
+            else -> return
+        }
+        val tag = (s as? UpdateState.Ready)?.tag ?: (s as UpdateState.NeedInstallPermission).tag
+        _updateState.value = when (app.updater.install(file)) {
+            is AppUpdater.InstallResult.Launched -> UpdateState.Ready(file, tag)
+            is AppUpdater.InstallResult.NeedPermission -> UpdateState.NeedInstallPermission(file, tag)
+            is AppUpdater.InstallResult.NoInstaller -> UpdateState.Ready(
+                file,
+                tag,
+                app.getString(R.string.settings_update_no_installer),
+            )
+        }
+    }
+
+    /** 用户取消下载：中止协程，回到 Available。 */
+    fun cancelDownload() {
+        updateJob?.cancel()
+    }
+
+    /** 收起更新卡片：取消进行中的工作并清理已下载的安装包。 */
+    fun dismissUpdate() {
+        updateJob?.cancel()
+        app.updater.clearDownloads()
+        _updateState.value = UpdateState.Idle
+    }
+
+    /** 构造「安装未知应用」授权页 Intent 并交回 UI 层启动（UI 负责兜底 ActivityNotFoundException）。 */
+    fun installPermissionIntent(onIntent: (Intent) -> Unit) {
+        onIntent(app.updater.installPermissionIntent())
+    }
+
+    /** 更新流程的用户可读错误文案：常见网络异常给网络语义，其余显示原始信息，永不出现 "?"。 */
+    private fun updatePlainError(e: Throwable): String = when (e) {
+        is java.net.UnknownHostException,
+        is java.net.SocketTimeoutException,
+        is java.net.ConnectException -> app.getString(R.string.error_network)
+        else -> e.message?.takeIf { it.isNotBlank() } ?: app.getString(R.string.error_network)
+    }
+
+    /** 下载失败文案：校验失败给专门提示，其余套「下载失败：」前缀。 */
+    private fun updateDownloadError(e: Throwable): String = when (e) {
+        is AppUpdater.ChecksumMismatchException -> app.getString(R.string.msg_update_checksum)
+        else -> app.getString(R.string.msg_update_download_failed, updatePlainError(e))
     }
 
     companion object {

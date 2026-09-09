@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -22,6 +23,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -281,6 +283,12 @@ fun SettingsScreen(
             }
         }
 
+        // ---- 应用更新 ----
+        SectionTitle(stringResource(R.string.settings_section_update))
+        SettingsCard {
+            UpdateCardBody(vm)
+        }
+
         // ---- 关于 ----
         SectionTitle(stringResource(R.string.settings_section_about))
         val uriHandler = LocalUriHandler.current
@@ -429,4 +437,186 @@ private fun SemesterStartDatePicker(
             runCatching { LocalDate.parse(text) }.getOrNull()?.let(onConfirm)
         }) { Text(stringResource(R.string.settings_save)) }
     }
+}
+
+/** 「应用更新」卡片主体：按 [AppViewModel.UpdateState] 状态机渲染检查 / 下载 / 安装各阶段。 */
+@Composable
+private fun UpdateCardBody(vm: AppViewModel) {
+    val context = LocalContext.current
+    val state by vm.updateState.collectAsState()
+    Text(
+        stringResource(R.string.settings_about_version, BuildConfig.VERSION_NAME),
+        style = MaterialTheme.typography.bodyMedium,
+    )
+    when (val s = state) {
+        is AppViewModel.UpdateState.Idle -> {
+            Text(
+                stringResource(R.string.settings_update_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            OutlinedButton(onClick = { vm.checkForUpdate() }) {
+                Text(stringResource(R.string.settings_update_check))
+            }
+        }
+
+        is AppViewModel.UpdateState.Checking -> OutlinedButton(onClick = {}, enabled = false) {
+            CircularProgressIndicator(Modifier.size(14.dp), strokeWidth = 2.dp)
+            Spacer(Modifier.width(8.dp))
+            Text(stringResource(R.string.settings_update_checking))
+        }
+
+        is AppViewModel.UpdateState.UpToDate -> {
+            Text(
+                stringResource(R.string.settings_update_uptodate, s.version),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            TextButton(onClick = { vm.checkForUpdate() }) {
+                Text(stringResource(R.string.settings_update_recheck))
+            }
+        }
+
+        is AppViewModel.UpdateState.Available -> {
+            Text(
+                stringResource(R.string.settings_update_available, s.release.tagName),
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            s.error?.let {
+                Text(
+                    it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
+            var showNotes by remember { mutableStateOf(false) }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(onClick = { showNotes = true }) {
+                    Text(stringResource(R.string.settings_update_view))
+                }
+                Button(onClick = { vm.downloadUpdate() }) {
+                    Text(stringResource(R.string.settings_update_download))
+                }
+            }
+            if (showNotes) {
+                ReleaseNotesDialog(
+                    tagName = s.release.tagName,
+                    body = s.release.body,
+                    onDismiss = { showNotes = false },
+                    onDownload = {
+                        showNotes = false
+                        vm.downloadUpdate()
+                    },
+                )
+            }
+        }
+
+        is AppViewModel.UpdateState.Downloading -> {
+            if (s.percent >= 0) {
+                Text(stringResource(R.string.settings_update_downloading, s.percent))
+                LinearProgressIndicator(
+                    progress = { s.percent / 100f },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            } else {
+                // 响应无 content-length：不确定进度
+                Text(stringResource(R.string.settings_update_downloading_unknown))
+                LinearProgressIndicator(Modifier.fillMaxWidth())
+            }
+            TextButton(onClick = { vm.cancelDownload() }) {
+                Text(stringResource(R.string.settings_update_cancel))
+            }
+        }
+
+        is AppViewModel.UpdateState.Ready -> {
+            Text(
+                stringResource(R.string.settings_update_ready, s.tag),
+                style = MaterialTheme.typography.bodySmall,
+            )
+            s.message?.let {
+                Text(
+                    it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(onClick = { vm.installUpdate() }) {
+                    Text(stringResource(R.string.settings_update_install))
+                }
+                TextButton(onClick = { vm.dismissUpdate() }) {
+                    Text(stringResource(R.string.common_cancel))
+                }
+            }
+        }
+
+        is AppViewModel.UpdateState.NeedInstallPermission -> {
+            Text(
+                stringResource(R.string.settings_update_need_permission),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(onClick = {
+                    vm.installPermissionIntent { intent ->
+                        runCatching { context.startActivity(intent) }
+                    }
+                }) {
+                    Text(stringResource(R.string.settings_update_grant))
+                }
+                Button(onClick = { vm.installUpdate() }) {
+                    Text(stringResource(R.string.settings_update_install))
+                }
+            }
+            Text(
+                stringResource(R.string.settings_update_ready, s.tag),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+
+        is AppViewModel.UpdateState.Failed -> {
+            Text(
+                s.message,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+            )
+            TextButton(onClick = { vm.checkForUpdate() }) {
+                Text(stringResource(R.string.settings_update_recheck))
+            }
+        }
+    }
+}
+
+/** 更新说明弹窗：展示 release body（Markdown 原文），确认即开始下载。 */
+@Composable
+private fun ReleaseNotesDialog(
+    tagName: String,
+    body: String?,
+    onDismiss: () -> Unit,
+    onDownload: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.settings_update_dialog_title, tagName)) },
+        text = {
+            Column(
+                Modifier.verticalScroll(rememberScrollState()).heightIn(max = 360.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(
+                    body?.takeIf { it.isNotBlank() } ?: stringResource(R.string.settings_update_no_notes),
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDownload) { Text(stringResource(R.string.settings_update_download)) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
+        },
+    )
 }

@@ -175,6 +175,32 @@
     <string name="msg_export_failed">导出失败：%1$s</string>
     <string name="msg_export_no_app">没有找到可处理日历的应用，请改用「导出 .ics 文件」</string>
 
+    <!-- 应用更新（GitHub Release） -->
+    <string name="settings_section_update">应用更新</string>
+    <string name="settings_update_hint">从 GitHub Release 检查新版本，手动下载并安装</string>
+    <string name="settings_update_check">检查更新</string>
+    <string name="settings_update_checking">正在检查更新…</string>
+    <string name="settings_update_uptodate">已是最新版本（v%1$s）</string>
+    <string name="settings_update_available">发现新版本 %1$s</string>
+    <string name="settings_update_view">查看更新内容</string>
+    <string name="settings_update_dialog_title">更新到 %1$s</string>
+    <string name="settings_update_no_notes">（该版本未附更新说明）</string>
+    <string name="settings_update_download">下载并安装</string>
+    <string name="settings_update_downloading">正在下载 %1$d%%</string>
+    <string name="settings_update_downloading_unknown">正在下载…</string>
+    <string name="settings_update_cancel">取消下载</string>
+    <string name="settings_update_ready">安装包已就绪，点「安装」升级到 %1$s</string>
+    <string name="settings_update_install">安装</string>
+    <string name="settings_update_need_permission">需要「安装未知应用」授权才能安装更新</string>
+    <string name="settings_update_grant">去授权</string>
+    <string name="settings_update_no_installer">设备上没有可用的安装器，请手动安装已下载的 APK</string>
+    <string name="settings_update_recheck">重新检查</string>
+    <string name="msg_update_check_failed">检查更新失败：%1$s</string>
+    <string name="msg_update_no_release">仓库还没有发布版本</string>
+    <string name="msg_update_no_apk">最新版本未提供可安装的 APK</string>
+    <string name="msg_update_download_failed">下载失败：%1$s</string>
+    <string name="msg_update_checksum">安装包校验失败（SHA-256 不符），已删除，请重试</string>
+
     <!-- 同步 / 错误消息（ViewModel） -->
     <string name="msg_synced_courses">已同步 %1$d 门课程</string>
     <string name="msg_calibrate_success">校准成功：第 1 周周一 = %1$s</string>

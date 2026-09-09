@@ -31,6 +31,8 @@ class GbuCaApp : Application() {
         private set
     lateinit var icsExport: IcsExportManager
         private set
+    lateinit var updater: me.huanlin.gbuca.update.AppUpdater
+        private set
 
     override fun onCreate() {
         super.onCreate()
@@ -45,6 +47,7 @@ class GbuCaApp : Application() {
         repo = CourseRepository(client, db, creds, settings)
         reminderScheduler = ReminderScheduler(this, settings)
         icsExport = IcsExportManager(this, repo, settings)
+        updater = me.huanlin.gbuca.update.AppUpdater(this)
     }
 
     companion object {
