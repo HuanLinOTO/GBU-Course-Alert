@@ -38,6 +38,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import me.huanlin.gbuca.R
 import me.huanlin.gbuca.domain.logic.ScheduleLogic
@@ -172,11 +173,11 @@ private fun WeekGrid(
     }
 }
 
-/** 重叠的课次分到不同竖道，互不重叠的共用同一道。 */
+/** 重叠的课次分到不同竖道，互不重叠的共用同一道。按真实时间判断重叠。 */
 private fun assignLanes(list: List<Meeting>): List<List<Meeting>> {
     val lanes = mutableListOf<MutableList<Meeting>>()
-    for (m in list) {
-        val lane = lanes.firstOrNull { l -> l.all { it.endPeriod < m.startPeriod } }
+    for (m in list.sortedWith(compareBy({ it.startTime }, { it.endTime }))) {
+        val lane = lanes.firstOrNull { l -> l.all { it.endTime <= m.startTime } }
         if (lane != null) lane.add(m) else lanes.add(mutableListOf(m))
     }
     return lanes
@@ -207,9 +208,9 @@ private fun DayColumn(
                     name = courseName(m.rwh),
                     onClick = { onOpenCourse(m.rwh) },
                     modifier = Modifier
-                        .offset(x = laneW * li, y = periodRowH * (m.startPeriod - 1) + 1.dp)
+                        .offset(x = laneW * li, y = meetingTopY(m) + 1.dp)
                         .width(laneW - 2.dp)
-                        .height(periodRowH * (m.endPeriod - m.startPeriod + 1) - 2.dp),
+                        .height(meetingBottomY(m) - meetingTopY(m) - 2.dp),
                 )
             }
         }
@@ -260,4 +261,17 @@ private fun MeetingChip(
             )
         }
     }
+}
+
+/** 课块顶/底 y 坐标：优先按真实时间在节次网格中插值（压缩课块可越过节次线）；网格缺失时回退节次索引。 */
+private fun meetingTopY(m: Meeting): Dp {
+    val loc = TimeGrid.locate(m.startTime)
+    return if (loc != null) periodRowH * ((loc.first - 1) + loc.second)
+    else periodRowH * (m.startPeriod - 1)
+}
+
+private fun meetingBottomY(m: Meeting): Dp {
+    val loc = TimeGrid.locate(m.endTime)
+    return if (loc != null) periodRowH * ((loc.first - 1) + loc.second)
+    else periodRowH * m.endPeriod
 }
