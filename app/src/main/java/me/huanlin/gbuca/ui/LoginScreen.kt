@@ -18,6 +18,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -56,84 +57,86 @@ fun LoginScreen(
             vm.login(username.trim(), password) { onLoggedIn() }
         }
     }
+    Surface(Modifier.fillMaxSize()) {
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .imePadding()
-            .padding(horizontal = 32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Spacer(Modifier.height(88.dp))
-        Text(
-            stringResource(R.string.login_hello),
-            style = MaterialTheme.typography.displaySmall,
-            fontWeight = FontWeight.Bold,
-        )
-        Text(
-            stringResource(R.string.login_hello_gbu),
-            style = MaterialTheme.typography.displaySmall,
-            fontWeight = FontWeight.Bold,
-        )
-        Spacer(Modifier.height(10.dp))
-        Text(
-            stringResource(R.string.login_subtitle),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Spacer(Modifier.height(48.dp))
-        OutlinedTextField(
-            value = username,
-            onValueChange = { username = it },
-            label = { Text(stringResource(R.string.login_student_id)) },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-        )
-        Spacer(Modifier.height(12.dp))
-        OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text(stringResource(R.string.login_password)) },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-            keyboardActions = KeyboardActions(onDone = { submit() }),
-            supportingText = {
-                if (password.any { it in '\uFF01'..'\uFF5E' || it == '\u3000' }) {
-                    Text(
-                        stringResource(R.string.login_fullwidth_hint),
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                }
-            },
-        )
-        Spacer(Modifier.height(24.dp))
-        Button(
-            onClick = { submit() },
-            enabled = !ui.syncing && username.isNotBlank() && password.isNotBlank(),
-            modifier = Modifier.fillMaxWidth().height(48.dp),
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .imePadding()
+                .padding(horizontal = 32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            if (ui.syncing) {
-                CircularProgressIndicator(
-                    Modifier.size(18.dp), strokeWidth = 2.dp,
-                    color = MaterialTheme.colorScheme.onPrimary,
-                )
-                Spacer(Modifier.width(10.dp))
-                Text(stringResource(R.string.login_button_in_progress))
-            } else {
-                Text(stringResource(R.string.login_button))
+            Spacer(Modifier.height(88.dp))
+            Text(
+                stringResource(R.string.login_hello),
+                style = MaterialTheme.typography.displaySmall,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                stringResource(R.string.login_hello_gbu),
+                style = MaterialTheme.typography.displaySmall,
+                fontWeight = FontWeight.Bold,
+            )
+            Spacer(Modifier.height(10.dp))
+            Text(
+                stringResource(R.string.login_subtitle),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(48.dp))
+            OutlinedTextField(
+                value = username,
+                onValueChange = { username = it },
+                label = { Text(stringResource(R.string.login_student_id)) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+            )
+            Spacer(Modifier.height(12.dp))
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text(stringResource(R.string.login_password)) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { submit() }),
+                supportingText = {
+                    if (password.any { it in '\uFF01'..'\uFF5E' || it == '\u3000' }) {
+                        Text(
+                            stringResource(R.string.login_fullwidth_hint),
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
+                },
+            )
+            Spacer(Modifier.height(24.dp))
+            Button(
+                onClick = { submit() },
+                enabled = !ui.syncing && username.isNotBlank() && password.isNotBlank(),
+                modifier = Modifier.fillMaxWidth().height(48.dp),
+            ) {
+                if (ui.syncing) {
+                    CircularProgressIndicator(
+                        Modifier.size(18.dp), strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                    )
+                    Spacer(Modifier.width(10.dp))
+                    Text(stringResource(R.string.login_button_in_progress))
+                } else {
+                    Text(stringResource(R.string.login_button))
+                }
             }
-        }
-        if (ui.message != null) Spacer(Modifier.height(8.dp))
-        ErrorMessage(ui.message, detail = ui.errorDetail, ok = ui.messageOk)
-        if (ui.needWebLogin) {
-            Spacer(Modifier.height(8.dp))
-            OutlinedButton(onClick = onOpenWebLogin, modifier = Modifier.fillMaxWidth()) {
-                Text(stringResource(R.string.login_open_web))
+            if (ui.message != null) Spacer(Modifier.height(8.dp))
+            ErrorMessage(ui.message, detail = ui.errorDetail, ok = ui.messageOk)
+            if (ui.needWebLogin) {
+                Spacer(Modifier.height(8.dp))
+                OutlinedButton(onClick = onOpenWebLogin, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.login_open_web))
+                }
             }
-        }
+    }
     }
 }

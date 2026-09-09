@@ -28,6 +28,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -92,87 +93,89 @@ fun SetupFlowScreen(
         forward = forwardDirection
         step = target
     }
+    Surface(Modifier.fillMaxSize()) {
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .imePadding()
-            .padding(horizontal = 32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Spacer(Modifier.height(72.dp))
-        OobeFlow.progressOf(step)?.let { (index, total) ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .imePadding()
+                .padding(horizontal = 32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Spacer(Modifier.height(72.dp))
+            OobeFlow.progressOf(step)?.let { (index, total) ->
+                Text(
+                    stringResource(R.string.oobe_progress, index, total),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                Spacer(Modifier.height(8.dp))
+            }
             Text(
-                stringResource(R.string.oobe_progress, index, total),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary,
+                stringResource(titleOf(step)),
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
             )
             Spacer(Modifier.height(8.dp))
-        }
-        Text(
-            stringResource(titleOf(step)),
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center,
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            stringResource(subtitleOf(step)),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
-        Spacer(Modifier.height(32.dp))
-        AnimatedContent(
-            targetState = step,
-            transitionSpec = {
-                val enter = slideInHorizontally(tween(OOBE_ANIM_MS)) { if (forward) it else -it } +
-                    fadeIn(tween(OOBE_ANIM_MS))
-                val exit = slideOutHorizontally(tween(OOBE_ANIM_MS)) { if (forward) -it else it } +
-                    fadeOut(tween(OOBE_ANIM_MS))
-                enter togetherWith exit
-            },
-            label = "oobe",
-        ) { current ->
-            val back: (() -> Unit)? = OobeFlow.previous(current)?.let { previous ->
-                { go(previous, false) }
-            }
-            Column(Modifier.fillMaxWidth()) {
-                when (current) {
-                    OobeStep.Address -> AddressStep(
-                        vm = vm,
-                        onPrevious = back,
-                        onNext = { go(OobeStep.Login, true) },
-                    )
-                    OobeStep.Login -> LoginStep(
-                        vm = vm,
-                        username = username,
-                        onUsernameChange = { username = it },
-                        onPrevious = back,
-                        onNext = { go(OobeStep.Permissions, true) },
-                        onOpenWebLogin = onOpenWebLogin,
-                    )
-                    OobeStep.Permissions -> PermissionsStep(
-                        reminderScheduler = reminderScheduler,
-                        onPrevious = back,
-                        onNext = { go(OobeStep.Reminders, true) },
-                    )
-                    OobeStep.Reminders -> RemindersStep(
-                        vm = vm,
-                        onPrevious = back,
-                        onNext = { go(OobeStep.Done, true) },
-                    )
-                    OobeStep.Done -> DoneStep(
-                        vm = vm,
-                        reminderScheduler = reminderScheduler,
-                        onPrevious = back,
-                        onFinish = onFinished,
-                    )
+            Text(
+                stringResource(subtitleOf(step)),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
+            Spacer(Modifier.height(32.dp))
+            AnimatedContent(
+                targetState = step,
+                transitionSpec = {
+                    val enter = slideInHorizontally(tween(OOBE_ANIM_MS)) { if (forward) it else -it } +
+                        fadeIn(tween(OOBE_ANIM_MS))
+                    val exit = slideOutHorizontally(tween(OOBE_ANIM_MS)) { if (forward) -it else it } +
+                        fadeOut(tween(OOBE_ANIM_MS))
+                    enter togetherWith exit
+                },
+                label = "oobe",
+            ) { current ->
+                val back: (() -> Unit)? = OobeFlow.previous(current)?.let { previous ->
+                    { go(previous, false) }
+                }
+                Column(Modifier.fillMaxWidth()) {
+                    when (current) {
+                        OobeStep.Address -> AddressStep(
+                            vm = vm,
+                            onPrevious = back,
+                            onNext = { go(OobeStep.Login, true) },
+                        )
+                        OobeStep.Login -> LoginStep(
+                            vm = vm,
+                            username = username,
+                            onUsernameChange = { username = it },
+                            onPrevious = back,
+                            onNext = { go(OobeStep.Permissions, true) },
+                            onOpenWebLogin = onOpenWebLogin,
+                        )
+                        OobeStep.Permissions -> PermissionsStep(
+                            reminderScheduler = reminderScheduler,
+                            onPrevious = back,
+                            onNext = { go(OobeStep.Reminders, true) },
+                        )
+                        OobeStep.Reminders -> RemindersStep(
+                            vm = vm,
+                            onPrevious = back,
+                            onNext = { go(OobeStep.Done, true) },
+                        )
+                        OobeStep.Done -> DoneStep(
+                            vm = vm,
+                            reminderScheduler = reminderScheduler,
+                            onPrevious = back,
+                            onFinish = onFinished,
+                        )
+                    }
                 }
             }
-        }
-        Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(24.dp))
+    }
     }
 }
 
