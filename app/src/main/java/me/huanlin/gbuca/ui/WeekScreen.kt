@@ -126,8 +126,12 @@ private fun WeekGrid(
                 )
             }
         }
-        // 网格主体（纵向滚动）
-        Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())) {
+        // 网格主体（纵向滚动；顶部内边距给首条时间刻度留位）
+        Column(
+            Modifier.weight(1f).fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(top = 8.dp),
+        ) {
             Box(Modifier.fillMaxWidth().height(periodRowH * n)) {
                 // 小节分隔线
                 periods.forEach { p ->
@@ -140,19 +144,18 @@ private fun WeekGrid(
                     )
                 }
                 Row(Modifier.fillMaxWidth().height(periodRowH * n)) {
-                    // 左轴：每小节一行
+                    // 左轴：节次号淡显在行内（时间改放到分隔线上，见下方刻度层）
                     Column(Modifier.width(timeColWidth).fillMaxHeight()) {
                         periods.forEach { p ->
-                            Column(
+                            Box(
                                 Modifier.fillMaxWidth().height(periodRowH),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center,
+                                contentAlignment = Alignment.Center,
                             ) {
-                                Text("${p.index}", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
                                 Text(
-                                    p.start.format(timeFmt),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    "${p.index}",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f),
                                 )
                             }
                         }
@@ -167,6 +170,47 @@ private fun WeekGrid(
                             modifier = Modifier.weight(1f).fillMaxHeight(),
                         )
                     }
+                }
+                // 时间刻度层：每条分隔线上居中放该节开始时间（surface 底遮住线段，形似刻度）
+                val tickH = 16.dp
+                periods.forEach { p ->
+                    Box(
+                        Modifier
+                            .offset(y = periodRowH * (p.index - 1) - tickH / 2)
+                            .width(timeColWidth)
+                            .height(tickH)
+                            .background(MaterialTheme.colorScheme.surface),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            p.start.format(timeFmt),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+            // 底部：结束线 + 末节结束时间刻度
+            Box(Modifier.fillMaxWidth().height(20.dp)) {
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+                )
+                Box(
+                    Modifier
+                        .offset(y = -7.dp)
+                        .width(timeColWidth)
+                        .height(14.dp)
+                        .background(MaterialTheme.colorScheme.surface),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        periods.last().end.format(timeFmt),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
         }
