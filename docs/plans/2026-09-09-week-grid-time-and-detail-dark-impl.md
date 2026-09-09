@@ -1,6 +1,6 @@
 # 课表页真实时间绘制 + 详情页深色修复 实施计划
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** 课表页课块按教务显式时间（含 3 节连排压缩时间）插值绘制、左轴时间刻度移到分隔线上；课程详情页与登录/向导页补齐 M3 背景，修复深色模式双色拼接。
 
@@ -30,7 +30,7 @@
 - Consumes: 现有 `TimeGrid.periods: List<Period>`（`index` 升序，含 `start/end: LocalTime`）。
 - Produces: `fun locate(time: LocalTime): Pair<Int, Float>?` —— 返回 (节次序号, 节内比例 0f..1f)；`periods` 为空返回 null。Task 2 的 `meetingTopY/meetingBottomY` 依赖此签名。
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 新建 `app/src/test/java/me/huanlin/gbuca/TimeGridTest.kt`：
 
@@ -84,12 +84,12 @@ class TimeGridTest {
 }
 ```
 
-- [ ] **Step 2: 运行确认失败**
+- [x] **Step 2: 运行确认失败**
 
 Run: `.\gradlew.bat test --tests "me.huanlin.gbuca.TimeGridTest"`（workdir: `D:\Projects\GBU-Course-Alert`，pwsh timeoutMs ≥ 600000）
 Expected: 编译失败，`unresolved reference: locate`
 
-- [ ] **Step 3: 最小实现**
+- [x] **Step 3: 最小实现**
 
 在 `TimeGrid.kt` 顶部 import 区加入 `java.time.temporal.ChronoUnit`；在 `fun period(index: Int)` 之后加入：
 
@@ -111,12 +111,12 @@ Expected: 编译失败，`unresolved reference: locate`
     }
 ```
 
-- [ ] **Step 4: 运行确认通过**
+- [x] **Step 4: 运行确认通过**
 
 Run: `.\gradlew.bat test --tests "me.huanlin.gbuca.TimeGridTest"`
 Expected: 全部 PASS
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**
 
 ```bash
 git add app/src/main/java/me/huanlin/gbuca/domain/time/TimeGrid.kt app/src/test/java/me/huanlin/gbuca/TimeGridTest.kt
@@ -134,7 +134,7 @@ git commit -m "feat(time): TimeGrid.locate 时刻→节次+节内比例（课表
 - Consumes: `TimeGrid.locate(time: LocalTime): Pair<Int, Float>?`（Task 1）。
 - Produces: 私有 `meetingTopY(m: Meeting): Dp`、`meetingBottomY(m: Meeting): Dp`（Task 3 无依赖，仅本文件使用）。
 
-- [ ] **Step 1: 替换 `assignLanes`（第 175-183 行）**
+- [x] **Step 1: 替换 `assignLanes`（第 175-183 行）**
 
 ```kotlin
 /** 重叠的课次分到不同竖道，互不重叠的共用同一道。按真实时间判断重叠。 */
@@ -148,7 +148,7 @@ private fun assignLanes(list: List<Meeting>): List<List<Meeting>> {
 }
 ```
 
-- [ ] **Step 2: 文件尾部（`MeetingChip` 之后）加入 y 坐标 helper**
+- [x] **Step 2: 文件尾部（`MeetingChip` 之后）加入 y 坐标 helper**
 
 ```kotlin
 /** 课块顶/底 y 坐标：优先按真实时间在节次网格中插值（压缩课块可越过节次线）；网格缺失时回退节次索引。 */
@@ -165,7 +165,7 @@ private fun meetingBottomY(m: Meeting): Dp {
 }
 ```
 
-- [ ] **Step 3: `DayColumn` 内课块定位改用 helper（原第 209-212 行）**
+- [x] **Step 3: `DayColumn` 内课块定位改用 helper（原第 209-212 行）**
 
 原：
 
@@ -185,12 +185,12 @@ private fun meetingBottomY(m: Meeting): Dp {
                         .height(meetingBottomY(m) - meetingTopY(m) - 2.dp),
 ```
 
-- [ ] **Step 4: 编译 + 全量测试**
+- [x] **Step 4: 编译 + 全量测试**
 
 Run: `.\gradlew.bat test`
 Expected: BUILD SUCCESSFUL（全部既有测试 + Task 1 新测试通过）
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**
 
 ```bash
 git add app/src/main/java/me/huanlin/gbuca/ui/WeekScreen.kt
@@ -207,7 +207,7 @@ git commit -m "fix(ui): 课表课块按教务显式时间插值绘制，重叠�
 **Interfaces:**
 - Consumes: Task 2 无新增接口；仅改 UI 结构。`timeColWidth/periodRowH/timeFmt` 沿用。
 
-- [ ] **Step 1: 整体替换网格主体块**
+- [x] **Step 1: 整体替换网格主体块**
 
 将 `// 网格主体（纵向滚动）` 注释开始的整个 `Column(Modifier.weight(1f)...) { ... }` 替换为：
 
@@ -304,12 +304,12 @@ git commit -m "fix(ui): 课表课块按教务显式时间插值绘制，重叠�
 
 说明：刻度盒不透明 surface 底绘制在分隔线之上（Box 内声明顺序即绘制顺序），形成"线被打断 + 刻度文字"效果；首行刻度中心恰在 y=0，靠 8dp 顶部内边距避免被滚动视口裁剪；末节结束刻度放在网格下方的 20dp 条内、中心对齐结束线。
 
-- [ ] **Step 2: 编译 + 测试**
+- [x] **Step 2: 编译 + 测试**
 
 Run: `.\gradlew.bat test`
 Expected: BUILD SUCCESSFUL
 
-- [ ] **Step 3: 提交**
+- [x] **Step 3: 提交**
 
 ```bash
 git add app/src/main/java/me/huanlin/gbuca/ui/WeekScreen.kt
@@ -326,9 +326,9 @@ git commit -m "feat(ui): 课表左轴时间刻度移至分隔线，节次号淡�
 **Interfaces:**
 - Consumes: 无。Produces: 无（纯 UI 包装）。
 
-- [ ] **Step 1: import 区加入 `androidx.compose.material3.Scaffold`（保持其余不动；`PaddingValues` 维持现有的全限定写法亦可）**
+- [x] **Step 1: import 区加入 `androidx.compose.material3.Scaffold`（保持其余不动；`PaddingValues` 维持现有的全限定写法亦可）**
 
-- [ ] **Step 2: 函数体替换（原第 45-127 行的 `Column(Modifier.fillMaxSize()) { ... }` 整体改写）**
+- [x] **Step 2: 函数体替换（原第 45-127 行的 `Column(Modifier.fillMaxSize()) { ... }` 整体改写）**
 
 将：
 
@@ -369,12 +369,12 @@ git commit -m "feat(ui): 课表左轴时间刻度移至分隔线，节次号淡�
     }
 ```
 
-- [ ] **Step 3: 编译 + 测试**
+- [x] **Step 3: 编译 + 测试**
 
 Run: `.\gradlew.bat test`
 Expected: BUILD SUCCESSFUL
 
-- [ ] **Step 4: 提交**
+- [x] **Step 4: 提交**
 
 ```bash
 git add app/src/main/java/me/huanlin/gbuca/ui/CourseDetailScreen.kt
@@ -392,9 +392,9 @@ git commit -m "fix(ui): 课程详情页包 Scaffold，统一 M3 surface 背景�
 **Interfaces:**
 - Consumes: 无。Produces: 无。
 
-- [ ] **Step 1: 两文件 import 区各加入 `androidx.compose.material3.Surface`**
+- [x] **Step 1: 两文件 import 区各加入 `androidx.compose.material3.Surface`**
 
-- [ ] **Step 2: LoginScreen — 在 `val focus = LocalFocusManager.current` 与根 `Column(` 之间插入 `Surface(Modifier.fillMaxSize()) {`，并在函数末尾（根 `Column` 闭合 `}` 之后、函数 `}` 之前）补一个闭合 `}`。**
+- [x] **Step 2: LoginScreen — 在 `val focus = LocalFocusManager.current` 与根 `Column(` 之间插入 `Surface(Modifier.fillMaxSize()) {`，并在函数末尾（根 `Column` 闭合 `}` 之后、函数 `}` 之前）补一个闭合 `}`。**
 
 改后骨架：
 
@@ -416,14 +416,14 @@ git commit -m "fix(ui): 课程详情页包 Scaffold，统一 M3 surface 背景�
 }
 ```
 
-- [ ] **Step 3: SetupFlowScreen — 同样处理：在 `fun go(...)` 定义之后、根 `Column(` 之前插入 `Surface(Modifier.fillMaxSize()) {`，函数末尾补闭合 `}`。**
+- [x] **Step 3: SetupFlowScreen — 同样处理：在 `fun go(...)` 定义之后、根 `Column(` 之前插入 `Surface(Modifier.fillMaxSize()) {`，函数末尾补闭合 `}`。**
 
-- [ ] **Step 4: 编译 + 测试**
+- [x] **Step 4: 编译 + 测试**
 
 Run: `.\gradlew.bat test`
 Expected: BUILD SUCCESSFUL
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**
 
 ```bash
 git add app/src/main/java/me/huanlin/gbuca/ui/LoginScreen.kt app/src/main/java/me/huanlin/gbuca/ui/SetupFlowScreen.kt
@@ -437,37 +437,37 @@ git commit -m "fix(ui): 登录页与 OOBE 向导根层包 Surface，修复深色
 **Files:**
 - 无代码改动；产出验证结论与必要的视觉微调（若左轴刻度被裁剪/重叠，回到 Task 3 调整内边距）。
 
-- [ ] **Step 1: 全量测试**
+- [x] **Step 1: 全量测试**
 
 Run: `.\gradlew.bat test`
 Expected: BUILD SUCCESSFUL
 
-- [ ] **Step 2: 构建 release APK**
+- [x] **Step 2: 构建 release APK**
 
 Run: `.\gradlew.bat assembleRelease`（pwsh timeoutMs ≥ 900000）
 Expected: `app/build/outputs/apk/release/app-release.apk` 生成
 
-- [ ] **Step 3: 安装到设备（保留数据；versionCode 7 > 已装 6）**
+- [x] **Step 3: 安装到设备（保留数据；versionCode 7 > 已装 6）**
 
 Run: `adb install -r app\build\outputs\apk\release\app-release.apk`
 Expected: `Success`
 
-- [ ] **Step 4: 深色模式截图核对课表页**
+- [x] **Step 4: 深色模式截图核对课表页**
 
 设备当前即为深色模式。启动应用 → 课表 tab：
 - 核对：左轴时间刻度位于分隔线上、节次号淡显；
 - 核对：周四「线性代数」课块顶端越过 14:40 刻度线约 1/3 行高（真实 14:30 开始）、底端止于 16:25（不到 16:45 线）；
 - 核对：周四「思想道德与法治」（08:00-09:55）底端止于 09:55 与 10:05 线之间；「物理原理1」（10:10-12:05）底端止于 12:05。
 
-- [ ] **Step 5: 深色模式截图核对课程详情页**
+- [x] **Step 5: 深色模式截图核对课程详情页**
 
 点开任一课程：顶栏与正文背景同色（无深藏青/浅灰拼接）。
 
-- [ ] **Step 6: 浅色模式抽查**
+- [x] **Step 6: 浅色模式抽查**
 
 `adb shell cmd uimode night no` → 重复 Step 4/5 目视核对；完成后 `adb shell cmd uimode night yes` 恢复深色（设备原本处于深色）。
 
-- [ ] **Step 7: 提交收尾（若有微调）**
+- [x] **Step 7: 提交收尾（若有微调）**
 
 ```bash
 git add -A app/src
