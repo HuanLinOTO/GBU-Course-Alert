@@ -1,5 +1,6 @@
 package me.huanlin.gbuca.ui
 
+import android.net.Uri
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInHorizontally
@@ -58,15 +59,20 @@ fun AppNavHost(
         composable("tabs") {
             TabsScreen(
                 vm = vm,
-                onOpenCourse = { rwh -> nav.navigate("course/$rwh") },
+                onOpenCourse = { rwh, slotKey ->
+                    // 课表页点击带时段键，详情页高亮对应课次；今日页等入口不传
+                    val route = if (slotKey != null) "course/$rwh?mk=${Uri.encode(slotKey)}" else "course/$rwh"
+                    nav.navigate(route)
+                },
                 onOpenWebLogin = onOpenWebLogin,
                 onRerunOobe = onRerunOobe,
                 reminderScheduler = reminderScheduler,
             )
         }
-        composable("course/{rwh}") { entry ->
+        composable("course/{rwh}?mk={mk}") { entry ->
             val rwh = entry.arguments?.getString("rwh") ?: return@composable
-            CourseDetailScreen(rwh = rwh, vm = vm)
+            val slotKey = entry.arguments?.getString("mk")
+            CourseDetailScreen(rwh = rwh, highlightSlotKey = slotKey, vm = vm)
         }
     }
 }
@@ -75,7 +81,7 @@ fun AppNavHost(
 @Composable
 private fun TabsScreen(
     vm: AppViewModel,
-    onOpenCourse: (String) -> Unit,
+    onOpenCourse: (String, String?) -> Unit,
     onOpenWebLogin: () -> Unit,
     onRerunOobe: () -> Unit,
     reminderScheduler: ReminderScheduler,

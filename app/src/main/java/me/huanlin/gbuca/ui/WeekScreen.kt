@@ -62,7 +62,7 @@ private val timeFmt = DateTimeFormatter.ofPattern("HH:mm")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WeekScreen(onOpenCourse: (String) -> Unit, vm: AppViewModel) {
+fun WeekScreen(onOpenCourse: (String, String?) -> Unit, vm: AppViewModel) {
     val termData by vm.termData.collectAsState()
     var week by rememberSaveable { mutableIntStateOf(currentWeek(vm.semesterStartMonday)) }
 
@@ -97,7 +97,7 @@ private fun WeekGrid(
     week: Int,
     semesterStartMonday: LocalDate,
     courseName: (String) -> String,
-    onOpenCourse: (String) -> Unit,
+    onOpenCourse: (String, String?) -> Unit,
 ) {
     val periods = TimeGrid.periods
     val n = periods.size
@@ -232,7 +232,7 @@ private fun DayColumn(
     meetings: List<Meeting>,
     isToday: Boolean,
     courseName: (String) -> String,
-    onOpenCourse: (String) -> Unit,
+    onOpenCourse: (String, String?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     BoxWithConstraints(modifier) {
@@ -250,7 +250,8 @@ private fun DayColumn(
                 MeetingChip(
                     meeting = m,
                     name = courseName(m.rwh),
-                    onClick = { onOpenCourse(m.rwh) },
+                    // 带上课次时段标识，详情页高亮这一条
+                    onClick = { onOpenCourse(m.rwh, m.slotKey) },
                     modifier = Modifier
                         .offset(x = laneW * li, y = meetingTopY(m) + 1.dp)
                         .width(laneW - 2.dp)

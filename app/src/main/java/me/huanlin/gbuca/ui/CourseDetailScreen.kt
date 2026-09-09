@@ -1,5 +1,7 @@
 package me.huanlin.gbuca.ui
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,6 +13,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -35,13 +39,19 @@ import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CourseDetailScreen(rwh: String, vm: AppViewModel) {
+fun CourseDetailScreen(rwh: String, highlightSlotKey: String? = null, vm: AppViewModel) {
     val termData by vm.termData.collectAsState()
     val course = termData.courseByRwh[rwh]
     val titleFallback = stringResource(R.string.detail_title_fallback)
     val noRoom = stringResource(R.string.no_room)
     val meetings = termData.meetings.filter { it.rwh == rwh }
         .sortedWith(compareBy({ it.weekday }, { it.startTime }))
+    val listState = rememberLazyListState()
+    // 从课表页点击进入时，自动滚到被点击的课次（前两项为课程信息块与"上课时间"标题）
+    LaunchedEffect(highlightSlotKey) {
+        val idx = meetings.indexOfFirst { it.slotKey == highlightSlotKey }
+        if (idx >= 0) listState.scrollToItem(2 + idx)
+    }
 
     Scaffold(
         topBar = { TopAppBar(title = { Text(course?.name ?: titleFallback) }) },
@@ -50,7 +60,8 @@ fun CourseDetailScreen(rwh: String, vm: AppViewModel) {
             Text(stringResource(R.string.detail_not_found), Modifier.padding(16.dp))
         } else {
         LazyColumn(
-            Modifier.fillMaxSize().padding(padding),
+            state = listState,
+            modifier = Modifier.fillMaxSize().padding(padding),
             contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
@@ -76,7 +87,29 @@ fun CourseDetailScreen(rwh: String, vm: AppViewModel) {
                 key = { "${it.weekday}-${it.startTime}-${it.role}-${it.weeks.hashCode()}" },
             ) { m ->
                 val wd = weekdayName(m.weekday)
-                Column(Modifier.padding(vertical = 4.dp)) {
+                val isHighlighted = m.slotKey == highlightSlotKey
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .then(
+                            if (isHighlighted) {
+                                // 高亮从课表页点进来的那个课次
+                                Modifier
+                                    .background(
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.10f),
+                                        RoundedCornerShape(10.dp),
+                                    )
+                                    .border(
+                                        1.dp,
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.45f),
+                                        RoundedCornerShape(10.dp),
+                                    )
+                                    .padding(horizontal = 10.dp, vertical = 6.dp)
+                            } else {
+                                Modifier.padding(vertical = 4.dp)
+                            }
+                        ),
+                ) {
                     Row {
                         Text(
                             wd,
@@ -110,7 +143,8 @@ fun CourseDetailScreen(rwh: String, vm: AppViewModel) {
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
-                    HorizontalDivider(Modifier.padding(top = 6.dp))
+                    // 高亮块自带边框收尾，不再画分隔线
+                    if (!isHighlighted) HorizontalDivider(Modifier.padding(top = 6.dp))
                 }
             }
             if (course.unparsed.isNotEmpty()) {

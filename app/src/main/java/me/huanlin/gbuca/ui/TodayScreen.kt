@@ -67,7 +67,7 @@ import java.time.format.DateTimeFormatter
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TodayScreen(
-    onOpenCourse: (String) -> Unit,
+    onOpenCourse: (String, String?) -> Unit,
     onOpenWebLogin: () -> Unit,
     vm: AppViewModel,
 ) {
@@ -189,7 +189,8 @@ fun TodayScreen(
                         scale = scale,
                         isCurrent = status is ClassStatus.InClass && (status as ClassStatus.InClass).meeting == m,
                         isNext = status is ClassStatus.Upcoming && (status as ClassStatus.Upcoming).meeting == m,
-                        onClick = { onOpenCourse(m.rwh) },
+                        // 今日页进入详情不高亮课次（无"从哪个课块点来"的上下文）
+                        onClick = { onOpenCourse(m.rwh, null) },
                     )
                 }
             }

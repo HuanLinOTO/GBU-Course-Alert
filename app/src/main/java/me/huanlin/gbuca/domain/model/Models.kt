@@ -37,6 +37,9 @@ data class Meeting(
     val rawText: String,
 ) {
     val durationMinutes: Long get() = ChronoUnit.MINUTES.between(startTime, endTime)
+
+    /** 课次时段标识（星期-开始-角色）：课表页点击跳详情时定位并高亮对应课次。 */
+    val slotKey: String get() = "$weekday-$startTime-$role"
 }
 
 data class TermData(
