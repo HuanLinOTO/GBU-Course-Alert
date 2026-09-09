@@ -1,6 +1,7 @@
 package me.huanlin.gbuca.domain.time
 
 import java.time.LocalTime
+import java.time.temporal.ChronoUnit
 
 /**
  * 作息时间网格：小节 35 分钟，同一大节内间隔 5 分钟，大节之间间隔 15 分钟。
@@ -71,6 +72,22 @@ object TimeGrid {
     }
 
     fun period(index: Int): Period? = periods.firstOrNull { it.index == index }
+
+    /** 时刻 → (节次序号, 节内比例 0f..1f)。早于首节归首节 0f；课间归前一节 1f；晚于末节归末节 1f。 */
+    fun locate(time: LocalTime): Pair<Int, Float>? {
+        val sorted = periods.sortedBy { it.index }
+        val first = sorted.firstOrNull() ?: return null
+        if (!time.isAfter(first.start)) return first.index to 0f
+        var last = first
+        for (p in sorted) {
+            if (p.start.isAfter(time)) break
+            last = p
+        }
+        if (time.isAfter(last.end)) return last.index to 1f
+        val total = ChronoUnit.SECONDS.between(last.start, last.end).coerceAtLeast(1)
+        val frac = ChronoUnit.SECONDS.between(last.start, time).toFloat() / total
+        return last.index to frac
+    }
 
     fun update(kbjcItems: List<KbjcItem>) {
         if (kbjcItems.isEmpty()) return

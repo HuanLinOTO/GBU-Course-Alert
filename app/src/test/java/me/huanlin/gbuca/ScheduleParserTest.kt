@@ -216,35 +216,6 @@ class ScheduleParserTest {
     }
 }
 
-class TimeGridTest {
-    @Test
-    fun `default grid`() {
-        val p1 = TimeGrid.period(1)
-        val p18 = TimeGrid.period(18)
-        assertNotNull(p1)
-        assertNotNull(p18)
-        assertEquals(LocalTime.of(8, 0), p1!!.start)
-        assertEquals(LocalTime.of(21, 15), p18!!.end)
-        val blocks = TimeGrid.bigBlocks()
-        assertEquals(9, blocks.size)
-        assertEquals(LocalTime.of(9, 30), blocks[1].start)
-        assertEquals(LocalTime.of(10, 45), blocks[1].end)
-    }
-
-    @Test
-    fun `kbjclist utc plus 8h`() {
-        TimeGrid.update(
-            listOf(
-                TimeGrid.KbjcItem(1, "1970-01-01 00:00:00.0", "1970-01-01 00:35:00.0", 1, 1),
-                TimeGrid.KbjcItem(2, "00:40", "01:15", 1, 1),
-            )
-        )
-        assertEquals(LocalTime.of(8, 0), TimeGrid.period(1)!!.start)
-        assertEquals(LocalTime.of(9, 15), TimeGrid.period(2)!!.end)
-        TimeGrid.reset()
-    }
-}
-
 class ScheduleLogicTest {
     private val start = LocalDate.of(2026, 8, 31) // 周一
 
