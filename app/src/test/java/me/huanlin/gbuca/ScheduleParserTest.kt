@@ -199,6 +199,40 @@ class ScheduleParserTest {
         assertEquals(LocalTime.of(9, 55), m.endTime) // 非大节网格的 10:05
     }
 
+    /** 真实 kcxx（2026-2027-1，26100088 物理原理1）：周二第4-6节不带时间段。
+     *  周二/四是 3 节连排作息，须按 10:10-12:05 兜底，而非周一三五网格的 11:00-12:15。 */
+    @Test
+    fun `no-time tuesday line derives from tt grid`() {
+        TimeGrid.reset()
+        val r = ScheduleParser.parse("<p>1-4周,星期二第4-6节 B304", "TT1")
+        assertEquals(1, r.meetings.size)
+        val m = r.meetings[0]
+        assertEquals(2, m.weekday)
+        assertEquals(LocalTime.of(10, 10), m.startTime)
+        assertEquals(LocalTime.of(12, 5), m.endTime)
+    }
+
+    @Test
+    fun `no-time thursday line derives from tt grid`() {
+        TimeGrid.reset()
+        val r = ScheduleParser.parse("<p>1-16周,星期四第10-12节 B306", "TT2")
+        assertEquals(1, r.meetings.size)
+        val m = r.meetings[0]
+        assertEquals(LocalTime.of(14, 30), m.startTime)
+        assertEquals(LocalTime.of(16, 25), m.endTime)
+    }
+
+    /** 周一三五的无时间行仍按默认网格（回归保护）。 */
+    @Test
+    fun `no-time monday line still uses default grid`() {
+        TimeGrid.reset()
+        val r = ScheduleParser.parse("<p>1-16周,星期一第5-6节 B306", "TT3")
+        assertEquals(1, r.meetings.size)
+        val m = r.meetings[0]
+        assertEquals(LocalTime.of(11, 0), m.startTime)
+        assertEquals(LocalTime.of(12, 15), m.endTime)
+    }
+
     @Test
     fun `week tokens`() {
         assertEquals((1..16).toSet(), ScheduleParser.parseWeeks("1-16"))

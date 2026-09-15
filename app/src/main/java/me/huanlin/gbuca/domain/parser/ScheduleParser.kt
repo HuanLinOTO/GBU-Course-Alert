@@ -64,11 +64,12 @@ object ScheduleParser {
                 val weekday = WEEKDAY[m.groupValues[2][0]]
                 val startPeriod = m.groupValues[3].toIntOrNull()
                 val endPeriod = (if (m.groupValues[4].isEmpty()) m.groupValues[3] else m.groupValues[4]).toIntOrNull()
-                // 显式时间永远优先；kcxx 未给时间时按节次查作息网格（同步时已由 kbjclist 覆盖）
+                // 显式时间永远优先；kcxx 未给时间时按节次查作息网格（同步时已由 kbjclist 覆盖）。
+                // 周二/四是 3 节连排作息（如第4-6节 10:10-12:05），须用对应网格兜底。
                 val startTime = parseTime(m.groupValues[5])
-                    ?: startPeriod?.let { TimeGrid.period(it)?.start }
+                    ?: startPeriod?.let { TimeGrid.period(it, weekday ?: 0)?.start }
                 val endTime = parseTime(m.groupValues[6])
-                    ?: endPeriod?.let { TimeGrid.period(it)?.end }
+                    ?: endPeriod?.let { TimeGrid.period(it, weekday ?: 0)?.end }
                 val roomRaw = m.groupValues[7].trim()
                 val room = if (roomRaw.isEmpty() || roomRaw == "无地点") null else roomRaw
 

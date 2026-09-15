@@ -78,4 +78,35 @@ class TimeGridTest {
         assertEquals(LocalTime.of(9, 15), TimeGrid.period(2)!!.end)
         TimeGrid.reset()
     }
+
+    /** 周二/四连排网格（官方作息：6 段 × 3 节，如第4-6节 10:10-12:05）。 */
+    @Test
+    fun `tt grid for tuesday thursday`() {
+        assertEquals(LocalTime.of(10, 10), TimeGrid.period(4, 2)!!.start)
+        assertEquals(LocalTime.of(12, 5), TimeGrid.period(6, 4)!!.end)
+        assertEquals(LocalTime.of(9, 55), TimeGrid.period(3, 2)!!.end)
+        assertEquals(LocalTime.of(14, 30), TimeGrid.period(10, 2)!!.start)
+        assertEquals(LocalTime.of(20, 45), TimeGrid.period(18, 4)!!.end)
+        assertEquals(18, TimeGrid.DEFAULT_TT.size)
+        assertEquals(6, TimeGrid.DEFAULT_TT.groupBy { it.bigBlock }.size)
+    }
+
+    /** 周一/三/五及周末仍用默认（kbjclist）网格。 */
+    @Test
+    fun `non tuesday thursday uses default grid`() {
+        assertEquals(LocalTime.of(12, 15), TimeGrid.period(6, 1)!!.end)
+        assertEquals(LocalTime.of(12, 15), TimeGrid.period(6, 3)!!.end)
+        assertEquals(LocalTime.of(12, 15), TimeGrid.period(6, 5)!!.end)
+        assertEquals(LocalTime.of(12, 15), TimeGrid.period(6, 6)!!.end)
+        assertEquals(LocalTime.of(12, 15), TimeGrid.period(6, 7)!!.end)
+    }
+
+    /** kbjclist 覆盖只作用于周一三五网格，不影响内置周二四网格。 */
+    @Test
+    fun `kbjclist update leaves tt grid untouched`() {
+        TimeGrid.update(listOf(TimeGrid.KbjcItem(1, "00:00", "00:45", 1, 1)))
+        assertEquals(LocalTime.of(8, 45), TimeGrid.period(1)!!.end)
+        assertEquals(LocalTime.of(12, 5), TimeGrid.period(6, 2)!!.end)
+        TimeGrid.reset()
+    }
 }

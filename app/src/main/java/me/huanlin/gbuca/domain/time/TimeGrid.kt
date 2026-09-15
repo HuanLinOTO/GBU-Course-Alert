@@ -5,9 +5,12 @@ import java.time.temporal.ChronoUnit
 
 /**
  * 作息时间网格：小节 35 分钟，同一大节内间隔 5 分钟，大节之间间隔 15 分钟。
- * 首节 8:00。可被 `queryYxkc` 响应中的 `kbjclist` 覆盖。
- * 注意：3 节连排课程的时间与大节网格不严格对齐，显式时间字符串永远是最高优先级，
- * 此网格仅用于课表视图对齐展示与兜底。
+ * 首节 8:00。可被 `queryYxkc` 响应中的 `kbjclist` 覆盖（仅周一/三/五网格）。
+ *
+ * 学校实行单双日两套作息（教务"上课节次时间查询"报表）：
+ * - 周一/三/五：9 段 × 2 节（即 [DEFAULT]，kbjclist 返回的也是这套）；
+ * - 周二/四：6 段 × 3 节连排（[DEFAULT_TT]，如第4-6节 10:10-12:05），教务接口不返回，内置。
+ * kcxx 中的显式时间字符串永远是最高优先级，网格仅用于课表视图对齐展示与兜底。
  */
 object TimeGrid {
 
@@ -57,8 +60,35 @@ object TimeGrid {
         sxwOf = ::sxwOfPeriod,
     )
 
+    private fun bigBlockOfPeriodTT(p: Int): Int = (p + 2) / 3
+
+    private fun sxwOfPeriodTT(p: Int): Int = when (p) {
+        in 1..6 -> 1   // 段1-2 上午
+        in 7..15 -> 3  // 段3 中午，段4-5 下午
+        else -> 5      // 段6 晚上
+    }
+
+    /** 周二/四作息：6 段 × 3 节连排（段 115 分钟，段间 15 分钟），与周一/三/五网格节号相同但时间不同。 */
+    val DEFAULT_TT: List<Period> = build(
+        listOf(
+            Triple(1, "08:00", "08:35"), Triple(2, "08:40", "09:15"), Triple(3, "09:20", "09:55"),
+            Triple(4, "10:10", "10:45"), Triple(5, "10:50", "11:25"), Triple(6, "11:30", "12:05"),
+            Triple(7, "12:20", "12:55"), Triple(8, "13:00", "13:35"), Triple(9, "13:40", "14:15"),
+            Triple(10, "14:30", "15:05"), Triple(11, "15:10", "15:45"), Triple(12, "15:50", "16:25"),
+            Triple(13, "16:40", "17:15"), Triple(14, "17:20", "17:55"), Triple(15, "18:00", "18:35"),
+            Triple(16, "18:50", "19:25"), Triple(17, "19:30", "20:05"), Triple(18, "20:10", "20:45"),
+        ),
+        bigOf = ::bigBlockOfPeriodTT,
+        sxwOf = ::sxwOfPeriodTT,
+    )
+
     @Volatile
     var periods: List<Period> = DEFAULT
+        private set
+
+    /** 周二/四网格。教务 `kbjclist` 不含此表，暂无服务器来源，始终为内置值。 */
+    @Volatile
+    var ttPeriods: List<Period> = DEFAULT_TT
         private set
 
     fun bigBlocks(): List<BigBlock> {
@@ -72,6 +102,10 @@ object TimeGrid {
     }
 
     fun period(index: Int): Period? = periods.firstOrNull { it.index == index }
+
+    /** 按星期取节次：周二/四用连排网格，其余用默认（周一/三/五）网格。weekday: 1=周一 … 7=周日。 */
+    fun period(index: Int, weekday: Int): Period? =
+        (if (weekday == 2 || weekday == 4) ttPeriods else periods).firstOrNull { it.index == index }
 
     /** 时刻 → (节次序号, 行内真实时间比例 0f..1f)。行跨度 = 本节开始→下一节开始（末节为→本节结束），
      *  节末时刻落在行内比例处而非下一节刻度线（如 12:15 → 第6行 35/50≈0.7）；课间同理按真实时间落位。
