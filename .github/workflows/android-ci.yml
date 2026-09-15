@@ -109,9 +109,11 @@ jobs:
           set -euo pipefail
           # 浅克隆未必带 tag 对象，先确保本地能读到 annotated message
           git fetch --no-tags --depth=1 origin "+refs/tags/$GITHUB_REF_NAME:refs/tags/$GITHUB_REF_NAME" || true
-          NOTES=$(git tag -l --format='%(contents)' "$GITHUB_REF_NAME")
+          # cat-file 原样输出 tag 对象（头部 + 空行 + message）；sed 删头部取完整 message，
+          # 避免 for-each-ref %(contents) 的 subject/body 拆分语义导致丢首行
+          NOTES=$(git cat-file tag "$GITHUB_REF_NAME" | sed -e '1,/^$/d')
           if [ -z "$NOTES" ]; then
-            echo "::error::tag $GITHUB_REF_NAME 无 annotated message，请用 git tag -a 打 tag 并附发布说明"
+            echo "::error::tag $GITHUB_REF_NAME 无 annotated message，请用 git tag -a --cleanup=verbatim -F <notes> 打 tag 并附发布说明（注意默认 cleanup 会剥掉 # 开头的行）"
             exit 1
           fi
           gh release create "$GITHUB_REF_NAME" apk-out/*.apk \
