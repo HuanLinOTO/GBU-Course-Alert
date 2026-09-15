@@ -108,7 +108,7 @@ jobs:
         run: |
           set -euo pipefail
           # 浅克隆未必带 tag 对象，先确保本地能读到 annotated message
-          git fetch --no-tags --depth=1 origin "refs/tags/$GITHUB_REF_NAME:refs/tags/$GITHUB_REF_NAME" || true
+          git fetch --no-tags --depth=1 origin "+refs/tags/$GITHUB_REF_NAME:refs/tags/$GITHUB_REF_NAME" || true
           NOTES=$(git tag -l --format='%(contents)' "$GITHUB_REF_NAME")
           if [ -z "$NOTES" ]; then
             echo "::error::tag $GITHUB_REF_NAME 无 annotated message，请用 git tag -a 打 tag 并附发布说明"
