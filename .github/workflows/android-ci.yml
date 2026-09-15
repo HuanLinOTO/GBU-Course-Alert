@@ -99,25 +99,24 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      # 打 v* tag 推送时自动创建 GitHub Release 并附上 APK
+      # 打 v* tag 推送时自动创建 GitHub Release 并附上 APK。
+      # 发布说明来自 annotated tag 的 message（git tag -a vX.Y.Z -m "..."），工作流无需随版本修改。
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          cat > release-notes.md <<'EOF'
-          ## 更新内容
-
-          - **应用内更新**：设置页新增「应用更新」，手动检查 GitHub Release 最新版本、查看更新说明、下载安装包（进度显示、SHA-256 完整性校验）并转交系统安装器升级
-          - 「关于」卡片同步整理，开源仓库链接可直接跳转
-
-          > 从旧版本升级到本版需手动下载 APK 安装一次；之后的版本可在「设置 → 应用更新」内一键升级。
-          > 首次使用需向学校获取教务系统与统一认证地址。
-          > 本地与 CI 使用同一 release 签名密钥，可相互覆盖安装；从旧版本（debug 签名）升级需先卸载一次。
-          EOF
+          set -euo pipefail
+          # 浅克隆未必带 tag 对象，先确保本地能读到 annotated message
+          git fetch --no-tags --depth=1 origin "refs/tags/$GITHUB_REF_NAME:refs/tags/$GITHUB_REF_NAME" || true
+          NOTES=$(git tag -l --format='%(contents)' "$GITHUB_REF_NAME")
+          if [ -z "$NOTES" ]; then
+            echo "::error::tag $GITHUB_REF_NAME 无 annotated message，请用 git tag -a 打 tag 并附发布说明"
+            exit 1
+          fi
           gh release create "$GITHUB_REF_NAME" apk-out/*.apk \
             --title "GBU课表 $GITHUB_REF_NAME" \
-            --notes-file release-notes.md
+            --notes "$NOTES"
 
       - name: Upload lint report
         if: failure()
