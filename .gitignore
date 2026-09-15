@@ -11,3 +11,4 @@ keystore.properties
 *.jks
 .codegraph/
 dist/
+.tmp/
